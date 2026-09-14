@@ -8,12 +8,12 @@ const route = useRoute();
 const authStore = useAuthStore();
 
 const showNav = computed(() => {
-  return authStore.token && route.name !== 'login';
+  return authStore.token && route.name !== 'login' && authStore.user?.role !== 'admin';
 });
 </script>
 
 <template>
-  <div class="min-h-screen bg-gray-50 font-sans text-gray-900 pb-16">
+  <div class="min-h-screen bg-gray-50 font-sans text-gray-900">
     <!-- Main Content -->
     <router-view />
 

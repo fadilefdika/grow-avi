@@ -9,6 +9,7 @@ import (
 	"time"
 
 	"github.com/gin-gonic/gin"
+	"golang.org/x/crypto/bcrypt"
 )
 
 type AuthHandler struct {
@@ -38,28 +39,67 @@ func (h *AuthHandler) Login(c *gin.Context) {
 		return
 	}
 
-	// Call Dakar
-	valid, profile, err := ValidateCredentials(req.NPK, req.Password)
-
-	// Log attempt
-	ip := c.ClientIP()
-	h.logAttempt(req.NPK, ip, valid)
-
-	if err != nil {
-		c.JSON(http.StatusBadGateway, gin.H{"error": "gagal menghubungi layanan autentikasi"})
-		return
-	}
-	if !valid {
-		c.JSON(http.StatusUnauthorized, gin.H{"error": "NPK atau password salah"})
-		return
+	// Cek apakah NPK hanya berisi angka (Employee) atau ada huruf (Admin)
+	isNumeric := true
+	for _, char := range req.NPK {
+		if char < '0' || char > '9' {
+			isNumeric = false
+			break
+		}
 	}
 
-	// Determine Role
 	role := "employee"
-	var adminId int
-	err = h.db.QueryRow("SELECT id FROM admin_users WHERE npk = $1 AND is_active = 1 AND deleted_at IS NULL", req.NPK).Scan(&adminId)
-	if err == nil {
-		role = "admin"
+	var profile *DakarProfile
+
+	if !isNumeric {
+		// 1. Asumsikan Admin (karena mengandung huruf/bukan angka murni)
+		var adminId int
+		var hashedPwd sql.NullString
+		err := h.db.QueryRow("SELECT id, password FROM admin_users WHERE npk = @p1 AND is_active = 1 AND deleted_at IS NULL", sql.Named("p1", req.NPK)).Scan(&adminId, &hashedPwd)
+
+		if err == nil && hashedPwd.Valid {
+			// Validasi password admin (bcrypt)
+			err = bcrypt.CompareHashAndPassword([]byte(hashedPwd.String), []byte(req.Password))
+			if err != nil {
+				// Log attempt gagal
+				h.logAttempt(req.NPK, c.ClientIP(), false)
+				c.JSON(http.StatusUnauthorized, gin.H{"error": "Username atau password salah"})
+				return
+			}
+
+			// Log attempt sukses
+			h.logAttempt(req.NPK, c.ClientIP(), true)
+			role = "admin"
+			
+			// Buat profile dummy untuk admin karena token butuh data ini
+			profile = &DakarProfile{
+				NPK:        req.NPK,
+				UserName:   req.NPK, // pakai username-nya saja untuk nama
+				Department: "System",
+			}
+		} else {
+			// Jika format huruf tapi tidak ada di database admin, tolak langsung
+			h.logAttempt(req.NPK, c.ClientIP(), false)
+			c.JSON(http.StatusUnauthorized, gin.H{"error": "Username atau password salah"})
+			return
+		}
+	} else {
+		// 2. Asumsikan Employee (karena angka murni, panggil Dakar API)
+		var dakarValid bool
+		var dakarErr error
+		dakarValid, profile, dakarErr = ValidateCredentials(req.NPK, req.Password)
+
+		// Log attempt
+		h.logAttempt(req.NPK, c.ClientIP(), dakarValid)
+
+		if dakarErr != nil {
+			c.JSON(http.StatusBadGateway, gin.H{"error": "gagal menghubungi layanan autentikasi"})
+			return
+		}
+		if !dakarValid {
+			c.JSON(http.StatusUnauthorized, gin.H{"error": "NPK atau password salah"})
+			return
+		}
 	}
 
 	h.issueTokens(c, profile, role)
@@ -175,8 +215,8 @@ func (h *AuthHandler) Refresh(c *gin.Context) {
 	// For this mock, we just generate tokens using the NPK and role we already have.
 	profile := &DakarProfile{
 		NPK:        npk,
-		UserName:   "Refreshed User", // You'd ideally cache this or query Dakar again
-		Department: "Refreshed Dept",
+		UserName:   "Admin", // You'd ideally cache this or query Dakar again
+		Department: "Admin",
 	}
 
 	h.issueTokens(c, profile, role)

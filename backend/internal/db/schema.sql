@@ -25,6 +25,7 @@ CREATE TABLE activities (
 CREATE TABLE admin_users (
     id BIGINT IDENTITY(1,1) PRIMARY KEY,
     npk VARCHAR(50) NOT NULL UNIQUE,
+    password VARCHAR(255) NULL,
     is_active BIT DEFAULT 1,
     created_at DATETIME DEFAULT GETDATE(),
     deleted_at DATETIME NULL

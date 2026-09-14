@@ -3,9 +3,11 @@ package reward
 import (
 	"database/sql"
 	"net/http"
+	"strconv"
 	"time"
 
 	"github.com/gin-gonic/gin"
+	"grow-point/internal/utils"
 )
 
 type RewardHandler struct {
@@ -27,9 +29,48 @@ type Reward struct {
 
 // GET /api/rewards
 func (h *RewardHandler) GetRewards(c *gin.Context) {
-	rows, err := h.db.Query(
-		"SELECT id, title, points_required, stock, is_active, created_at FROM rewards WHERE deleted_at IS NULL AND is_active = 1 ORDER BY points_required",
-	)
+	// 1. Get pagination params
+	allowedSort := map[string]string{
+		"title":           "title",
+		"points_required": "points_required",
+		"stock":           "stock",
+	}
+	params := utils.GetPaginationParams(c, "points_required", allowedSort)
+
+	// 2. Build Query
+	query := "SELECT id, title, points_required, stock, is_active, created_at FROM rewards WHERE deleted_at IS NULL AND is_active = 1"
+	countQuery := "SELECT COUNT(*) FROM rewards WHERE deleted_at IS NULL AND is_active = 1"
+	var args []interface{}
+
+	if params.Search != "" {
+		searchTerm := "%" + params.Search + "%"
+		query += " AND title LIKE @p1"
+		countQuery += " AND title LIKE @p1"
+		args = append(args, searchTerm)
+	}
+
+	// 3. Get total count
+	var total int
+	err := h.db.QueryRow(countQuery, args...).Scan(&total)
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "gagal menghitung total reward"})
+		return
+	}
+
+	// 4. Apply sorting and pagination
+	query += " ORDER BY " + params.Sort + " " + params.Order
+	if params.IsPaginate {
+		if params.Sort != "id" {
+			query += ", id ASC"
+		}
+		args = append(args, params.Offset, params.Limit)
+		argOffsetIdx := len(args) - 1
+		argLimitIdx := len(args)
+		query += " OFFSET @p" + strconv.Itoa(argOffsetIdx) + " ROWS FETCH NEXT @p" + strconv.Itoa(argLimitIdx) + " ROWS ONLY"
+	}
+
+	// 5. Execute query
+	rows, err := h.db.Query(query, args...)
 	if err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": "gagal mengambil data reward"})
 		return
@@ -47,7 +88,10 @@ func (h *RewardHandler) GetRewards(c *gin.Context) {
 	if rewards == nil {
 		rewards = []Reward{}
 	}
-	c.JSON(http.StatusOK, gin.H{"data": rewards})
+	c.JSON(http.StatusOK, gin.H{
+		"data":  rewards,
+		"total": total,
+	})
 }
 
 // POST /api/rewards/redeem/:id — with race-condition protection via SQL Server row lock
@@ -257,13 +301,61 @@ func (h *RewardHandler) DeleteReward(c *gin.Context) {
 
 // GET /api/admin/rewards/redemptions — all redemption history for admin
 func (h *RewardHandler) AllRedemptions(c *gin.Context) {
-	rows, err := h.db.Query(
-		`SELECT rr.id, rr.npk, r.title, rr.points_spent, rr.status, rr.created_at
+	// 1. Get pagination params
+	allowedSort := map[string]string{
+		"created_at":   "rr.created_at",
+		"points_spent": "rr.points_spent",
+		"reward_title": "r.title",
+		"user_name":    "u.name",
+	}
+	params := utils.GetPaginationParams(c, "rr.created_at", allowedSort)
+	if params.Sort == "rr.created_at" && params.Order == "ASC" {
+		params.Order = "DESC" // default should be latest first
+	}
+
+	// 2. Build Query
+	query := `SELECT rr.id, rr.npk, u.name as user_name, u.department, r.title as reward_title, rr.points_spent, rr.status, rr.created_at
 		FROM reward_redemptions rr
 		JOIN rewards r ON rr.reward_id = r.id
-		WHERE rr.deleted_at IS NULL
-		ORDER BY rr.created_at DESC`,
-	)
+		JOIN users u ON rr.npk = u.npk
+		WHERE rr.deleted_at IS NULL`
+	countQuery := `SELECT COUNT(*)
+		FROM reward_redemptions rr
+		JOIN rewards r ON rr.reward_id = r.id
+		JOIN users u ON rr.npk = u.npk
+		WHERE rr.deleted_at IS NULL`
+	var args []interface{}
+
+	if params.Search != "" {
+		searchTerm := "%" + params.Search + "%"
+		searchCondition := " AND (r.title LIKE @p1 OR u.name LIKE @p1)"
+		query += searchCondition
+		countQuery += searchCondition
+		args = append(args, searchTerm)
+	}
+
+	// 3. Get total count
+	var total int
+	err := h.db.QueryRow(countQuery, args...).Scan(&total)
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "gagal menghitung total redemption"})
+		return
+	}
+
+	// 4. Apply sorting and pagination
+	query += " ORDER BY " + params.Sort + " " + params.Order
+	if params.IsPaginate {
+		if params.Sort != "rr.id" {
+			query += ", rr.id ASC"
+		}
+		args = append(args, params.Offset, params.Limit)
+		argOffsetIdx := len(args) - 1
+		argLimitIdx := len(args)
+		query += " OFFSET @p" + strconv.Itoa(argOffsetIdx) + " ROWS FETCH NEXT @p" + strconv.Itoa(argLimitIdx) + " ROWS ONLY"
+	}
+
+	// 5. Execute query
+	rows, err := h.db.Query(query, args...)
 	if err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": "gagal mengambil data redemption"})
 		return
@@ -273,6 +365,8 @@ func (h *RewardHandler) AllRedemptions(c *gin.Context) {
 	type AdminRedemptionItem struct {
 		ID          int64     `json:"id"`
 		NPK         string    `json:"npk"`
+		UserName    string    `json:"user_name"`
+		Department  string    `json:"department"`
 		RewardTitle string    `json:"reward_title"`
 		PointsSpent int       `json:"points_spent"`
 		Status      string    `json:"status"`
@@ -282,7 +376,7 @@ func (h *RewardHandler) AllRedemptions(c *gin.Context) {
 	var items []AdminRedemptionItem
 	for rows.Next() {
 		var it AdminRedemptionItem
-		if err := rows.Scan(&it.ID, &it.NPK, &it.RewardTitle, &it.PointsSpent, &it.Status, &it.CreatedAt); err != nil {
+		if err := rows.Scan(&it.ID, &it.NPK, &it.UserName, &it.Department, &it.RewardTitle, &it.PointsSpent, &it.Status, &it.CreatedAt); err != nil {
 			continue
 		}
 		items = append(items, it)
@@ -290,5 +384,8 @@ func (h *RewardHandler) AllRedemptions(c *gin.Context) {
 	if items == nil {
 		items = []AdminRedemptionItem{}
 	}
-	c.JSON(http.StatusOK, gin.H{"data": items, "total": len(items)})
+	c.JSON(http.StatusOK, gin.H{
+		"data":  items,
+		"total": total,
+	})
 }

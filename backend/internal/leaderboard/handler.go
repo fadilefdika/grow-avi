@@ -175,50 +175,72 @@ func (h *LeaderboardHandler) MyBalance(c *gin.Context) {
 	})
 }
 
-// GET /api/admin/users — list all users with their stats (admin only)
+// GET /api/admin/users/stats — dashboard summary (admin only)
 func (h *LeaderboardHandler) AdminUserStats(c *gin.Context) {
+	type TopUser struct {
+		NPK        string `json:"npk"`
+		UserName   string `json:"user_name"`
+		Department string `json:"department"`
+		Balance    int    `json:"balance"`
+	}
+
+	type Summary struct {
+		PendingSubmissions     int       `json:"pending_submissions"`
+		ApprovedThisMonth      int       `json:"approved_this_month"`
+		RejectedThisMonth      int       `json:"rejected_this_month"`
+		RejectionRate          float64   `json:"rejection_rate"` // 0-100
+		TotalRedemptionsMonth  int       `json:"total_redemptions_month"`
+		TopUsers               []TopUser `json:"top_users"`
+	}
+
+	var summary Summary
+
+	// 1. Pending submissions
+	h.db.QueryRow(`SELECT COUNT(*) FROM activity_submissions WHERE status = 'PENDING' AND deleted_at IS NULL`).Scan(&summary.PendingSubmissions)
+
+	// 2. Approved this month
+	h.db.QueryRow(`SELECT COUNT(*) FROM activity_submissions WHERE status = 'APPROVED' AND deleted_at IS NULL AND MONTH(updated_at) = MONTH(GETDATE()) AND YEAR(updated_at) = YEAR(GETDATE())`).Scan(&summary.ApprovedThisMonth)
+
+	// 3. Rejected this month
+	h.db.QueryRow(`SELECT COUNT(*) FROM activity_submissions WHERE status = 'REJECTED' AND deleted_at IS NULL AND MONTH(updated_at) = MONTH(GETDATE()) AND YEAR(updated_at) = YEAR(GETDATE())`).Scan(&summary.RejectedThisMonth)
+
+	// 4. Rejection rate (based on resolved submissions this month)
+	resolved := summary.ApprovedThisMonth + summary.RejectedThisMonth
+	if resolved > 0 {
+		summary.RejectionRate = float64(summary.RejectedThisMonth) / float64(resolved) * 100
+	}
+
+	// 5. Total redemptions this month
+	h.db.QueryRow(`SELECT COUNT(*) FROM reward_redemptions WHERE deleted_at IS NULL AND status != 'CANCELLED' AND MONTH(redeemed_at) = MONTH(GETDATE()) AND YEAR(redeemed_at) = YEAR(GETDATE())`).Scan(&summary.TotalRedemptionsMonth)
+
+	// 6. Top 5 users by balance
 	rows, err := h.db.Query(`
-		SELECT 
+		SELECT TOP 5
 			s.npk,
 			MAX(s.user_name) as user_name,
 			MAX(s.department) as department,
-			COUNT(CASE WHEN s.status = 'PENDING' THEN 1 END) as pending_count,
-			COUNT(CASE WHEN s.status = 'APPROVED' THEN 1 END) as approved_count,
-			COUNT(CASE WHEN s.status = 'REJECTED' THEN 1 END) as rejected_count,
-			ISNULL(SUM(CASE WHEN s.status = 'APPROVED' THEN s.points_awarded ELSE 0 END), 0) as total_earned
+			ISNULL(SUM(CASE WHEN s.status = 'APPROVED' THEN s.points_awarded ELSE 0 END), 0) -
+			ISNULL((SELECT SUM(r.points_spent) FROM reward_redemptions r WHERE r.npk = s.npk AND r.deleted_at IS NULL AND r.status != 'CANCELLED'), 0) as balance
 		FROM activity_submissions s
 		WHERE s.deleted_at IS NULL
 		GROUP BY s.npk
-		ORDER BY total_earned DESC
+		ORDER BY balance DESC
 	`)
-	if err != nil {
-		c.JSON(http.StatusInternalServerError, gin.H{"error": "gagal mengambil data user"})
-		return
-	}
-	defer rows.Close()
-
-	type UserStat struct {
-		NPK           string `json:"npk"`
-		UserName      string `json:"user_name"`
-		Department    string `json:"department"`
-		PendingCount  int    `json:"pending_count"`
-		ApprovedCount int    `json:"approved_count"`
-		RejectedCount int    `json:"rejected_count"`
-		TotalEarned   int    `json:"total_earned"`
-	}
-
-	var stats []UserStat
-	for rows.Next() {
-		var s UserStat
-		if err := rows.Scan(&s.NPK, &s.UserName, &s.Department, &s.PendingCount, &s.ApprovedCount, &s.RejectedCount, &s.TotalEarned); err != nil {
-			continue
+	if err == nil {
+		defer rows.Close()
+		for rows.Next() {
+			var u TopUser
+			if err := rows.Scan(&u.NPK, &u.UserName, &u.Department, &u.Balance); err != nil {
+				continue
+			}
+			summary.TopUsers = append(summary.TopUsers, u)
 		}
-		stats = append(stats, s)
 	}
-	if stats == nil {
-		stats = []UserStat{}
+	if summary.TopUsers == nil {
+		summary.TopUsers = []TopUser{}
 	}
-	c.JSON(http.StatusOK, gin.H{"data": stats})
+
+	c.JSON(http.StatusOK, gin.H{"data": summary})
 }
 
 // Helper to suppress sql.NullString warning

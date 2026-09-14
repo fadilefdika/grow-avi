@@ -12,8 +12,24 @@
           Selamat Datang
         </h2>
         <p class="mt-2 text-center text-sm text-gray-500">
-          Silakan masuk menggunakan NPK Anda
+          Silakan masuk ke akun Anda
         </p>
+      </div>
+
+      <!-- Login Type Toggle -->
+      <div class="flex p-1 space-x-1 bg-gray-100/80 rounded-xl">
+        <button 
+          @click="loginType = 'employee'" 
+          :class="['w-1/2 py-2.5 text-sm font-medium rounded-lg transition-all duration-200', loginType === 'employee' ? 'bg-white text-primary shadow-sm' : 'text-gray-500 hover:text-gray-700']"
+        >
+          Karyawan
+        </button>
+        <button 
+          @click="loginType = 'admin'" 
+          :class="['w-1/2 py-2.5 text-sm font-medium rounded-lg transition-all duration-200', loginType === 'admin' ? 'bg-white text-primary shadow-sm' : 'text-gray-500 hover:text-gray-700']"
+        >
+          Admin
+        </button>
       </div>
       
       <form class="mt-8 space-y-6" @submit.prevent="handleLogin">
@@ -23,26 +39,49 @@
         </div>
 
         <div class="space-y-4">
+          <!-- Username / NPK Field -->
           <div>
-            <label for="npk" class="block text-sm font-medium text-gray-700 mb-1">NPK</label>
+            <label :for="loginType === 'employee' ? 'npk' : 'username'" class="block text-sm font-medium text-gray-700 mb-1">
+              {{ loginType === 'employee' ? 'NPK' : 'Username' }}
+            </label>
             <div class="relative">
               <div class="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
                 <svg class="h-5 w-5 text-gray-400" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor" aria-hidden="true">
                   <path fill-rule="evenodd" d="M10 9a3 3 0 100-6 3 3 0 000 6zm-7 9a7 7 0 1114 0H3z" clip-rule="evenodd" />
                 </svg>
               </div>
-              <input id="npk" name="npk" type="text" required v-model="npk" class="appearance-none rounded-lg relative block w-full px-3 py-3 pl-10 border border-gray-300 placeholder-gray-500 text-gray-900 focus:outline-none focus:ring-2 focus:ring-primary focus:border-primary focus:z-10 sm:text-sm transition-colors" placeholder="Masukkan NPK" />
+              <input 
+                :id="loginType === 'employee' ? 'npk' : 'username'" 
+                :name="loginType === 'employee' ? 'npk' : 'username'" 
+                type="text" 
+                required 
+                v-model="usernameInput" 
+                class="appearance-none rounded-lg relative block w-full px-3 py-3 pl-10 border border-gray-300 placeholder-gray-500 text-gray-900 focus:outline-none focus:ring-2 focus:ring-primary focus:border-primary focus:z-10 sm:text-sm transition-colors" 
+                :placeholder="loginType === 'employee' ? 'Masukkan NPK' : 'Masukkan Username'" 
+              />
             </div>
           </div>
+
+          <!-- Password Field -->
           <div>
-            <label for="password" class="block text-sm font-medium text-gray-700 mb-1">Password (Awork)</label>
+            <label for="password" class="block text-sm font-medium text-gray-700 mb-1">
+              {{ loginType === 'employee' ? 'Password (Awork)' : 'Password' }}
+            </label>
             <div class="relative">
               <div class="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
                 <svg class="h-5 w-5 text-gray-400" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor" aria-hidden="true">
                   <path fill-rule="evenodd" d="M5 9V7a5 5 0 0110 0v2a2 2 0 012 2v5a2 2 0 01-2 2H5a2 2 0 01-2-2v-5a2 2 0 012-2zm8-2v2H7V7a3 3 0 016 0z" clip-rule="evenodd" />
                 </svg>
               </div>
-              <input id="password" name="password" type="password" required v-model="password" class="appearance-none rounded-lg relative block w-full px-3 py-3 pl-10 border border-gray-300 placeholder-gray-500 text-gray-900 focus:outline-none focus:ring-2 focus:ring-primary focus:border-primary focus:z-10 sm:text-sm transition-colors" placeholder="Password Awork" />
+              <input 
+                id="password" 
+                name="password" 
+                type="password" 
+                required 
+                v-model="passwordInput" 
+                class="appearance-none rounded-lg relative block w-full px-3 py-3 pl-10 border border-gray-300 placeholder-gray-500 text-gray-900 focus:outline-none focus:ring-2 focus:ring-primary focus:border-primary focus:z-10 sm:text-sm transition-colors" 
+                :placeholder="loginType === 'employee' ? 'Password Awork' : 'Password Admin'" 
+              />
             </div>
           </div>
         </div>
@@ -73,8 +112,9 @@ import apiClient from '../api/client';
 const router = useRouter();
 const authStore = useAuthStore();
 
-const npk = ref('');
-const password = ref('');
+const loginType = ref<'employee' | 'admin'>('employee');
+const usernameInput = ref('');
+const passwordInput = ref('');
 const isLoading = ref(false);
 const error = ref('');
 
@@ -84,8 +124,8 @@ const handleLogin = async () => {
   
   try {
     const response = await apiClient.post('/auth/login', {
-      npk: npk.value,
-      password: password.value
+      npk: usernameInput.value,
+      password: passwordInput.value
     });
     
     const { access_token, user } = response.data;
@@ -95,15 +135,19 @@ const handleLogin = async () => {
     // Save to pinia store
     authStore.setAuth(access_token, user);
     
-    // Navigate explicitly to dashboard
-    router.push('/dashboard');
+    // Navigate explicitly based on role
+    if (user.role === 'admin') {
+      router.push('/admin/dashboard');
+    } else {
+      router.push('/dashboard');
+    }
     
   } catch (err: any) {
     if (err.response) {
       if (err.response.status === 429) {
         error.value = 'Akun terkunci karena terlalu banyak percobaan gagal. Coba lagi dalam 15 menit.';
       } else if (err.response.status === 401) {
-        error.value = 'NPK atau Password salah.';
+        error.value = loginType.value === 'employee' ? 'NPK atau Password salah.' : 'Username atau Password salah.';
       } else {
         error.value = err.response.data.error || 'Terjadi kesalahan pada server.';
       }

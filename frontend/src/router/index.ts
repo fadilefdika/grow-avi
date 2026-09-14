@@ -13,19 +13,58 @@ const router = createRouter({
     },
     {
       path: '/',
-      redirect: '/dashboard'
+      redirect: () => {
+        const authStore = useAuthStore();
+        return authStore.user?.role === 'admin' ? '/admin/dashboard' : '/dashboard';
+      }
     },
     {
       path: '/dashboard',
       name: 'dashboard',
       component: () => import('../views/DashboardView.vue'),
-      meta: { requiresAuth: true }
+      meta: { requiresAuth: true, role: 'employee' }
+    },
+    {
+      path: '/admin/dashboard',
+      name: 'admin-dashboard',
+      component: () => import('../views/admin/AdminDashboardView.vue'),
+      meta: { requiresAuth: true, role: 'admin' }
     },
     {
       path: '/submission',
       name: 'submission',
       component: () => import('../views/employee/SubmissionView.vue'),
-      meta: { requiresAuth: false } // Set to false for now so user can preview without logging in
+      meta: { requiresAuth: true, role: 'employee' }
+    },
+    {
+      path: '/rewards',
+      name: 'rewards',
+      component: () => import('../views/employee/RewardView.vue'),
+      meta: { requiresAuth: true, role: 'employee' }
+    },
+    {
+      path: '/leaderboard',
+      name: 'leaderboard',
+      component: () => import('../views/employee/LeaderboardView.vue'),
+      meta: { requiresAuth: true, role: 'employee' }
+    },
+    {
+      path: '/admin/submissions',
+      name: 'admin-submissions',
+      component: () => import('../views/admin/SubmissionQueueView.vue'),
+      meta: { requiresAuth: true, role: 'admin' }
+    },
+    {
+      path: '/admin/master-data',
+      name: 'admin-master-data',
+      component: () => import('../views/admin/MasterDataView.vue'),
+      meta: { requiresAuth: true, role: 'admin' }
+    },
+    {
+      path: '/admin/rewards',
+      name: 'admin-rewards',
+      component: () => import('../views/admin/RewardManagementView.vue'),
+      meta: { requiresAuth: true, role: 'admin' }
     }
   ]
 });
@@ -51,7 +90,15 @@ router.beforeEach(async (to, from, next) => {
   if (to.meta.requiresAuth && !isAuthenticated) {
     next('/login');
   } else if (to.meta.requiresGuest && isAuthenticated) {
-    next('/dashboard');
+    next(authStore.user?.role === 'admin' ? '/admin/dashboard' : '/dashboard');
+  } else if (to.meta.requiresAuth && to.meta.role) {
+    // Check role explicitly
+    if (authStore.user?.role !== to.meta.role) {
+       // redirect to appropriate dashboard instead of just blocking
+       next(authStore.user?.role === 'admin' ? '/admin/dashboard' : '/dashboard');
+    } else {
+       next();
+    }
   } else {
     next();
   }

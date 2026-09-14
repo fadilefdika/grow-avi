@@ -13,10 +13,12 @@ import (
 	"os"
 	"os/exec"
 	"path/filepath"
+	"strconv"
 	"strings"
 	"time"
 
 	"github.com/gin-gonic/gin"
+	"grow-point/internal/utils"
 )
 
 type SubmissionHandler struct {
@@ -362,17 +364,64 @@ func (h *SubmissionHandler) GetSubmissionDetail(c *gin.Context) {
 
 // GET /api/admin/submissions/pending
 func (h *SubmissionHandler) PendingQueue(c *gin.Context) {
-	rows, err := h.db.Query(
-		`SELECT s.id, s.grow_id, s.npk, s.user_name, s.department,
+	// 1. Get pagination params
+	allowedSort := map[string]string{
+		"created_at":     "s.created_at",
+		"user_name":      "s.user_name",
+		"activity_name":  "a.name",
+		"default_points": "a.default_points",
+	}
+	params := utils.GetPaginationParams(c, "s.created_at", allowedSort)
+	if params.Sort == "s.created_at" && params.Order == "ASC" {
+		params.Order = "DESC" // default should be latest first
+	}
+
+	// 2. Build Query
+	query := `SELECT s.id, s.grow_id, s.npk, s.user_name, s.department,
 		a.name as activity_name, cat.name as category_name, a.default_points,
 		CONVERT(varchar, s.activity_date, 23) as activity_date,
 		s.custom_reference, s.created_at
 		FROM activity_submissions s
 		JOIN activities a ON s.activity_id = a.id
 		JOIN categories cat ON a.category_id = cat.id
-		WHERE s.status = 'PENDING' AND s.deleted_at IS NULL
-		ORDER BY s.created_at ASC`,
-	)
+		WHERE s.status = 'PENDING' AND s.deleted_at IS NULL`
+	countQuery := `SELECT COUNT(*)
+		FROM activity_submissions s
+		JOIN activities a ON s.activity_id = a.id
+		JOIN categories cat ON a.category_id = cat.id
+		WHERE s.status = 'PENDING' AND s.deleted_at IS NULL`
+	var args []interface{}
+
+	if params.Search != "" {
+		searchTerm := "%" + params.Search + "%"
+		searchCondition := " AND (s.user_name LIKE @p1 OR a.name LIKE @p1 OR s.grow_id LIKE @p1)"
+		query += searchCondition
+		countQuery += searchCondition
+		args = append(args, searchTerm)
+	}
+
+	// 3. Get total count
+	var total int
+	err := h.db.QueryRow(countQuery, args...).Scan(&total)
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "gagal menghitung total antrian"})
+		return
+	}
+
+	// 4. Apply sorting and pagination
+	query += " ORDER BY " + params.Sort + " " + params.Order
+	if params.IsPaginate {
+		if params.Sort != "s.id" {
+			query += ", s.id ASC"
+		}
+		args = append(args, params.Offset, params.Limit)
+		argOffsetIdx := len(args) - 1
+		argLimitIdx := len(args)
+		query += " OFFSET @p" + strconv.Itoa(argOffsetIdx) + " ROWS FETCH NEXT @p" + strconv.Itoa(argLimitIdx) + " ROWS ONLY"
+	}
+
+	// 5. Execute query
+	rows, err := h.db.Query(query, args...)
 	if err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": "gagal mengambil data antrian"})
 		return
@@ -404,7 +453,10 @@ func (h *SubmissionHandler) PendingQueue(c *gin.Context) {
 	if items == nil {
 		items = []PendingItem{}
 	}
-	c.JSON(http.StatusOK, gin.H{"data": items, "total": len(items)})
+	c.JSON(http.StatusOK, gin.H{
+		"data":  items,
+		"total": total,
+	})
 }
 
 type ApproveRequest struct {

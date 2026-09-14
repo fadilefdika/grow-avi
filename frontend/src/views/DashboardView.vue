@@ -7,8 +7,15 @@
           <h2 class="text-white text-sm opacity-80">Halo,</h2>
           <h1 class="text-white text-xl font-bold">{{ auth.user?.name || auth.user?.npk || 'Karyawan' }}</h1>
         </div>
-        <div class="w-12 h-12 bg-white/20 rounded-full flex items-center justify-center backdrop-blur-sm border border-white/30 shadow-inner">
-          <span class="text-white font-bold text-lg">{{ getInitial(auth.user?.name || auth.user?.npk || 'U') }}</span>
+        <div class="flex items-center gap-3 relative z-10">
+          <div class="w-10 h-10 bg-white/20 rounded-full flex items-center justify-center backdrop-blur-sm border border-white/30 shadow-inner">
+            <span class="text-white font-bold text-lg">{{ getInitial(auth.user?.name || auth.user?.npk || 'U') }}</span>
+          </div>
+          <button @click="handleLogout" class="w-8 h-8 rounded-full bg-white/10 hover:bg-red-500/80 flex items-center justify-center transition-colors text-white border border-white/20">
+            <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1" />
+            </svg>
+          </button>
         </div>
       </div>
     </div>
@@ -26,13 +33,13 @@
           </div>
         </div>
         <div class="h-16 w-[1px] bg-gray-100"></div>
-        <div class="text-right">
-          <p class="text-gray-500 text-xs font-medium mb-1">Peringkat</p>
+        <div class="text-right cursor-pointer group" @click="$router.push('/leaderboard')">
+          <p class="text-gray-500 text-xs font-medium mb-1 group-hover:text-primary transition-colors">Peringkat <span class="text-[10px] bg-primary/10 text-primary px-1 rounded ml-1">Lihat</span></p>
           <div class="flex items-center justify-end gap-1">
             <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 text-secondary" fill="none" viewBox="0 0 24 24" stroke="currentColor">
               <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 3v4M3 5h4M6 17v4m-2-2h4m5-16l2.286 6.857L21 12l-5.714 2.143L13 21l-2.286-6.857L5 12l5.714-2.143L13 3z" />
             </svg>
-            <span class="text-2xl font-bold text-gray-900">#{{ rank }}</span>
+            <span class="text-2xl font-bold text-gray-900 group-hover:text-primary transition-colors">#{{ rank }}</span>
           </div>
         </div>
       </div>
@@ -48,14 +55,32 @@
           <span class="text-xs font-semibold text-gray-800 text-center">Buat<br>Pengajuan</span>
         </router-link>
         
-        <div class="bg-white rounded-xl p-4 shadow-sm border border-gray-100 flex flex-col items-center justify-center gap-2 hover:border-secondary transition-all group cursor-not-allowed opacity-80">
-          <div class="w-12 h-12 rounded-full bg-orange-50 flex items-center justify-center">
-            <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6 text-secondary" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+        <router-link to="/rewards" class="bg-white rounded-xl p-4 shadow-sm border border-gray-100 flex flex-col items-center justify-center gap-2 hover:border-secondary transition-all group">
+          <div class="w-12 h-12 rounded-full bg-orange-50 flex items-center justify-center group-hover:bg-secondary transition-colors">
+            <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6 text-secondary group-hover:text-white transition-colors" fill="none" viewBox="0 0 24 24" stroke="currentColor">
               <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v13m0-13V6a2 2 0 112 2h-2zm0 0V5.5A2.5 2.5 0 109.5 8H12zm-7 4h14M5 12a2 2 0 110-4h14a2 2 0 110 4M5 12v7a2 2 0 002 2h10a2 2 0 002-2v-7" />
             </svg>
           </div>
           <span class="text-xs font-semibold text-gray-800 text-center">Tukar<br>Hadiah</span>
+        </router-link>
+      </div>
+
+      <!-- Admin Actions (Only if admin) -->
+      <div v-if="auth.user?.role === 'admin'" class="bg-gray-800 rounded-xl p-4 shadow-sm flex items-center justify-between mt-2">
+        <div class="flex items-center gap-3">
+          <div class="w-10 h-10 bg-gray-700 rounded-full flex items-center justify-center">
+             <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 text-yellow-500" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z" />
+            </svg>
+          </div>
+          <div>
+            <h3 class="text-white font-bold text-sm">Mode Administrator</h3>
+            <p class="text-gray-400 text-xs">Akses panel admin penuh</p>
+          </div>
         </div>
+        <router-link to="/admin/dashboard" class="px-4 py-2 bg-yellow-500 text-gray-900 font-bold rounded-lg text-sm hover:bg-yellow-400 transition-colors">
+          Buka Panel
+        </router-link>
       </div>
 
       <!-- Recent Submissions Tracker -->
@@ -109,8 +134,11 @@
 
 <script setup lang="ts">
 import { ref, onMounted } from 'vue';
+import { useRouter } from 'vue-router';
 import { useAuthStore } from '../stores/auth';
 import apiClient from '../api/client';
+
+const router = useRouter();
 
 const auth = useAuthStore();
 const balance = ref(0); 
@@ -174,6 +202,17 @@ const fetchDashboardData = async () => {
     
   } finally {
     isLoading.value = false;
+  }
+};
+
+const handleLogout = async () => {
+  try {
+    await apiClient.post('/auth/logout');
+  } catch (err) {
+    console.error('Logout error:', err);
+  } finally {
+    auth.logout();
+    router.push('/login');
   }
 };
 

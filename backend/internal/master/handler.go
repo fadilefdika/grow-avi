@@ -6,6 +6,7 @@ import (
 	"strconv"
 
 	"github.com/gin-gonic/gin"
+	"grow-point/internal/utils"
 )
 
 type MasterHandler struct {
@@ -37,7 +38,49 @@ type Activity struct {
 
 // GET /api/categories
 func (h *MasterHandler) GetCategories(c *gin.Context) {
-	rows, err := h.db.Query("SELECT id, name, is_active FROM categories WHERE deleted_at IS NULL AND is_active = 1 ORDER BY name")
+	// 1. Get pagination params
+	allowedSort := map[string]string{
+		"name": "name",
+	}
+	params := utils.GetPaginationParams(c, "name", allowedSort)
+
+	// 2. Build Query
+	query := "SELECT id, name, is_active FROM categories WHERE deleted_at IS NULL AND is_active = 1"
+	countQuery := "SELECT COUNT(*) FROM categories WHERE deleted_at IS NULL AND is_active = 1"
+	var args []interface{}
+
+	if params.Search != "" {
+		searchTerm := "%" + params.Search + "%"
+		query += " AND name LIKE @p1"
+		countQuery += " AND name LIKE @p1"
+		args = append(args, searchTerm)
+	}
+
+	// 3. Get total count
+	var total int
+	err := h.db.QueryRow(countQuery, args...).Scan(&total)
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "gagal menghitung total kategori"})
+		return
+	}
+
+	// 4. Apply sorting and pagination (SQL Server syntax)
+	query += " ORDER BY " + params.Sort + " " + params.Order
+	if params.IsPaginate {
+		// Tie-breaker for stable sort
+		if params.Sort != "id" {
+			query += ", id ASC"
+		}
+		
+		// Add offset params
+		args = append(args, params.Offset, params.Limit)
+		argOffsetIdx := len(args) - 1
+		argLimitIdx := len(args)
+		query += " OFFSET @p" + strconv.Itoa(argOffsetIdx) + " ROWS FETCH NEXT @p" + strconv.Itoa(argLimitIdx) + " ROWS ONLY"
+	}
+
+	// 5. Execute query
+	rows, err := h.db.Query(query, args...)
 	if err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": "gagal mengambil data kategori"})
 		return
@@ -53,19 +96,30 @@ func (h *MasterHandler) GetCategories(c *gin.Context) {
 		categories = append(categories, cat)
 	}
 
-	// Gunakan %+v untuk melakukan print struct di Golang
-	// fmt.Printf("categories.value: %+v\n", categories)
-
 	if categories == nil {
 		categories = []Category{}
 	}
-	c.JSON(http.StatusOK, gin.H{"data": categories})
+	
+	c.JSON(http.StatusOK, gin.H{
+		"data":  categories,
+		"total": total,
+	})
 }
 
 // GET /api/activities?category_id=X
 func (h *MasterHandler) GetActivities(c *gin.Context) {
+	// 1. Get pagination params
+	allowedSort := map[string]string{
+		"name":           "name",
+		"default_points": "default_points",
+	}
+	params := utils.GetPaginationParams(c, "name", allowedSort)
+
+	// 2. Build Query
 	query := "SELECT id, category_id, name, default_points, is_custom_input, is_active FROM activities WHERE deleted_at IS NULL AND is_active = 1"
-	args := []interface{}{}
+	countQuery := "SELECT COUNT(*) FROM activities WHERE deleted_at IS NULL AND is_active = 1"
+	var args []interface{}
+	argCount := 1
 
 	catIDStr := c.Query("category_id")
 	if catIDStr != "" {
@@ -74,11 +128,39 @@ func (h *MasterHandler) GetActivities(c *gin.Context) {
 			c.JSON(http.StatusBadRequest, gin.H{"error": "category_id tidak valid"})
 			return
 		}
-		query += " AND category_id = @p1"
+		query += " AND category_id = @p" + strconv.Itoa(argCount)
+		countQuery += " AND category_id = @p" + strconv.Itoa(argCount)
 		args = append(args, catID)
+		argCount++
 	}
-	query += " ORDER BY name"
 
+	if params.Search != "" {
+		searchTerm := "%" + params.Search + "%"
+		query += " AND name LIKE @p" + strconv.Itoa(argCount)
+		countQuery += " AND name LIKE @p" + strconv.Itoa(argCount)
+		args = append(args, searchTerm)
+		argCount++
+	}
+
+	// 3. Get total count
+	var total int
+	err := h.db.QueryRow(countQuery, args...).Scan(&total)
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "gagal menghitung total aktivitas"})
+		return
+	}
+
+	// 4. Apply sorting and pagination
+	query += " ORDER BY " + params.Sort + " " + params.Order
+	if params.IsPaginate {
+		if params.Sort != "id" {
+			query += ", id ASC"
+		}
+		args = append(args, params.Offset, params.Limit)
+		query += " OFFSET @p" + strconv.Itoa(argCount) + " ROWS FETCH NEXT @p" + strconv.Itoa(argCount+1) + " ROWS ONLY"
+	}
+
+	// 5. Execute query
 	rows, err := h.db.Query(query, args...)
 	if err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": "gagal mengambil data aktivitas"})
@@ -97,7 +179,10 @@ func (h *MasterHandler) GetActivities(c *gin.Context) {
 	if activities == nil {
 		activities = []Activity{}
 	}
-	c.JSON(http.StatusOK, gin.H{"data": activities})
+	c.JSON(http.StatusOK, gin.H{
+		"data":  activities,
+		"total": total,
+	})
 }
 
 // ---------- ADMIN CRUD ENDPOINTS ----------
