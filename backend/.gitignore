@@ -1,0 +1,14 @@
+# Binary
+*.exe
+*.exe~
+tmp.exe
+grow-server.exe
+
+# Environment
+.env
+
+# Uploaded files (exclude from git)
+uploads/
+
+# Go build cache
+go.sum.bak
