@@ -53,7 +53,7 @@
               + Tambah Kategori
             </button>
           </template>
-          <template #row-actions="{ row }">
+          <template #actions="{ row }">
             <button @click="openCategoryModal(row)" class="text-blue-600 hover:text-blue-900 mr-3">Edit</button>
             <button @click="deleteCategory(row.id)" class="text-red-600 hover:text-red-900">Hapus</button>
           </template>
@@ -83,7 +83,7 @@
           <template #cell-default_points="{ value }">
             <span class="font-bold text-gray-900">{{ value }} pts</span>
           </template>
-          <template #row-actions="{ row }">
+          <template #actions="{ row }">
             <button @click="openActivityModal(row)" class="text-blue-600 hover:text-blue-900 mr-3">Edit</button>
             <button @click="deleteActivity(row.id)" class="text-red-600 hover:text-red-900">Hapus</button>
           </template>

@@ -29,7 +29,7 @@ func ValidateCredentials(npk, password string) (bool, *DakarProfile, error) {
 	if defaultPassword == "" {
 		defaultPassword = "password" // fallback
 	}
-	
+
 	// Check admin override
 	if npk == "admin" && password == "admin" {
 		return true, &DakarProfile{

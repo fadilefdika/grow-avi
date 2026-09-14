@@ -5,6 +5,7 @@ import (
 	"database/sql"
 	"encoding/hex"
 	"fmt"
+	"log/slog"
 	"net/http"
 	"time"
 
@@ -70,7 +71,7 @@ func (h *AuthHandler) Login(c *gin.Context) {
 			// Log attempt sukses
 			h.logAttempt(req.NPK, c.ClientIP(), true)
 			role = "admin"
-			
+
 			// Buat profile dummy untuk admin karena token butuh data ini
 			profile = &DakarProfile{
 				NPK:        req.NPK,
@@ -108,6 +109,7 @@ func (h *AuthHandler) Login(c *gin.Context) {
 func (h *AuthHandler) issueTokens(c *gin.Context, profile *DakarProfile, role string) {
 	accessToken, err := GenerateAccessToken(profile.NPK, profile.UserName, profile.Department, role)
 	if err != nil {
+		slog.Error("gagal membuat token", "error", err)
 		c.JSON(http.StatusInternalServerError, gin.H{"error": "gagal membuat token"})
 		return
 	}
@@ -119,6 +121,7 @@ func (h *AuthHandler) issueTokens(c *gin.Context, profile *DakarProfile, role st
 		profile.NPK, hashedRefresh, role, expiresAt, c.Request.UserAgent())
 
 	if err != nil {
+		slog.Error("gagal menyimpan refresh token", "error", err)
 		c.JSON(http.StatusInternalServerError, gin.H{"error": "gagal menyimpan refresh token"})
 		return
 	}

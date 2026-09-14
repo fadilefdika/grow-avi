@@ -2,6 +2,7 @@ package reward
 
 import (
 	"database/sql"
+	"log/slog"
 	"net/http"
 	"strconv"
 	"time"
@@ -53,6 +54,7 @@ func (h *RewardHandler) GetRewards(c *gin.Context) {
 	var total int
 	err := h.db.QueryRow(countQuery, args...).Scan(&total)
 	if err != nil {
+		slog.Error("gagal menghitung total reward", "error", err)
 		c.JSON(http.StatusInternalServerError, gin.H{"error": "gagal menghitung total reward"})
 		return
 	}
@@ -72,6 +74,7 @@ func (h *RewardHandler) GetRewards(c *gin.Context) {
 	// 5. Execute query
 	rows, err := h.db.Query(query, args...)
 	if err != nil {
+		slog.Error("gagal mengambil data reward", "error", err)
 		c.JSON(http.StatusInternalServerError, gin.H{"error": "gagal mengambil data reward"})
 		return
 	}
@@ -102,6 +105,7 @@ func (h *RewardHandler) Redeem(c *gin.Context) {
 	// Begin transaction
 	tx, err := h.db.Begin()
 	if err != nil {
+		slog.Error("gagal memulai transaksi", "error", err)
 		c.JSON(http.StatusInternalServerError, gin.H{"error": "gagal memulai transaksi"})
 		return
 	}
@@ -123,6 +127,7 @@ func (h *RewardHandler) Redeem(c *gin.Context) {
 		return
 	}
 	if err != nil {
+		slog.Error("gagal mengambil data reward", "error", err)
 		c.JSON(http.StatusInternalServerError, gin.H{"error": "gagal mengambil data reward"})
 		return
 	}
@@ -139,6 +144,7 @@ func (h *RewardHandler) Redeem(c *gin.Context) {
 		npk,
 	).Scan(&totalEarned)
 	if err != nil {
+		slog.Error("gagal menghitung saldo poin", "error", err)
 		c.JSON(http.StatusInternalServerError, gin.H{"error": "gagal menghitung saldo poin"})
 		return
 	}
@@ -148,6 +154,7 @@ func (h *RewardHandler) Redeem(c *gin.Context) {
 		npk,
 	).Scan(&totalSpent)
 	if err != nil {
+		slog.Error("gagal menghitung poin yang sudah digunakan", "error", err)
 		c.JSON(http.StatusInternalServerError, gin.H{"error": "gagal menghitung poin yang sudah digunakan"})
 		return
 	}
@@ -155,9 +162,9 @@ func (h *RewardHandler) Redeem(c *gin.Context) {
 	balance := totalEarned - totalSpent
 	if balance < pointsRequired {
 		c.JSON(http.StatusPaymentRequired, gin.H{
-			"error":            "saldo poin tidak mencukupi",
-			"current_balance":  balance,
-			"required_points":  pointsRequired,
+			"error":           "saldo poin tidak mencukupi",
+			"current_balance": balance,
+			"required_points": pointsRequired,
 		})
 		return
 	}
@@ -168,6 +175,7 @@ func (h *RewardHandler) Redeem(c *gin.Context) {
 		rewardID,
 	)
 	if err != nil {
+		slog.Error("gagal mengupdate stok reward", "error", err)
 		c.JSON(http.StatusInternalServerError, gin.H{"error": "gagal mengupdate stok reward"})
 		return
 	}
@@ -179,21 +187,23 @@ func (h *RewardHandler) Redeem(c *gin.Context) {
 		npk, rewardID, pointsRequired,
 	).Scan(&redemptionID)
 	if err != nil {
+		slog.Error("gagal mencatat penukaran reward", "error", err)
 		c.JSON(http.StatusInternalServerError, gin.H{"error": "gagal mencatat penukaran reward"})
 		return
 	}
 
 	// Commit
 	if err = tx.Commit(); err != nil {
+		slog.Error("gagal menyelesaikan transaksi", "error", err)
 		c.JSON(http.StatusInternalServerError, gin.H{"error": "gagal menyelesaikan transaksi"})
 		return
 	}
 
 	c.JSON(http.StatusCreated, gin.H{
-		"message":        "reward berhasil ditukar",
-		"redemption_id":  redemptionID,
-		"reward_title":   title,
-		"points_spent":   pointsRequired,
+		"message":           "reward berhasil ditukar",
+		"redemption_id":     redemptionID,
+		"reward_title":      title,
+		"points_spent":      pointsRequired,
 		"remaining_balance": balance - pointsRequired,
 	})
 }
@@ -211,6 +221,7 @@ func (h *RewardHandler) MyRedemptions(c *gin.Context) {
 		npk,
 	)
 	if err != nil {
+		slog.Error("gagal mengambil riwayat penukaran", "error", err)
 		c.JSON(http.StatusInternalServerError, gin.H{"error": "gagal mengambil riwayat penukaran"})
 		return
 	}
@@ -260,6 +271,7 @@ func (h *RewardHandler) CreateReward(c *gin.Context) {
 		req.Title, req.PointsRequired, req.Stock,
 	).Scan(&newID)
 	if err != nil {
+		slog.Error("gagal membuat reward", "error", err)
 		c.JSON(http.StatusInternalServerError, gin.H{"error": "gagal membuat reward"})
 		return
 	}
@@ -279,6 +291,7 @@ func (h *RewardHandler) UpdateReward(c *gin.Context) {
 		req.Title, req.PointsRequired, req.Stock, id,
 	)
 	if err != nil {
+		slog.Error("gagal update reward", "error", err)
 		c.JSON(http.StatusInternalServerError, gin.H{"error": "gagal update reward"})
 		return
 	}
@@ -293,6 +306,7 @@ func (h *RewardHandler) DeleteReward(c *gin.Context) {
 		id,
 	)
 	if err != nil {
+		slog.Error("gagal menghapus reward", "error", err)
 		c.JSON(http.StatusInternalServerError, gin.H{"error": "gagal menghapus reward"})
 		return
 	}
@@ -338,6 +352,7 @@ func (h *RewardHandler) AllRedemptions(c *gin.Context) {
 	var total int
 	err := h.db.QueryRow(countQuery, args...).Scan(&total)
 	if err != nil {
+		slog.Error("gagal menghitung total redemption", "error", err)
 		c.JSON(http.StatusInternalServerError, gin.H{"error": "gagal menghitung total redemption"})
 		return
 	}
@@ -357,6 +372,7 @@ func (h *RewardHandler) AllRedemptions(c *gin.Context) {
 	// 5. Execute query
 	rows, err := h.db.Query(query, args...)
 	if err != nil {
+		slog.Error("gagal mengambil data redemption", "error", err)
 		c.JSON(http.StatusInternalServerError, gin.H{"error": "gagal mengambil data redemption"})
 		return
 	}

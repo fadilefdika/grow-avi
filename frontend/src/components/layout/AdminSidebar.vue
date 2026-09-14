@@ -6,6 +6,7 @@
     <nav class="mt-2 flex-1">
       <router-link to="/admin/dashboard" class="block px-6 py-3" :class="isActive('/admin/dashboard')">Dashboard</router-link>
       <router-link to="/admin/submissions" class="block px-6 py-3" :class="isActive('/admin/submissions')">Antrean Approval</router-link>
+      <router-link to="/admin/activity-log" class="block px-6 py-3" :class="isActive('/admin/activity-log')">Activity Log</router-link>
       <router-link to="/admin/master-data" class="block px-6 py-3" :class="isActive('/admin/master-data')">Master Data</router-link>
       <router-link to="/admin/rewards" class="block px-6 py-3" :class="isActive('/admin/rewards')">Manajemen Hadiah</router-link>
     </nav>

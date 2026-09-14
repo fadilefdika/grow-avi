@@ -65,6 +65,18 @@ const router = createRouter({
       name: 'admin-rewards',
       component: () => import('../views/admin/RewardManagementView.vue'),
       meta: { requiresAuth: true, role: 'admin' }
+    },
+    {
+      path: '/admin/activity-log',
+      name: 'admin-activity-log',
+      component: () => import('../views/admin/ActivityLogView.vue'),
+      meta: { requiresAuth: true, role: 'admin' }
+    },
+    {
+      path: '/admin/leaderboard',
+      name: 'admin-leaderboard',
+      component: () => import('../views/admin/AdminLeaderboardView.vue'),
+      meta: { requiresAuth: true, role: 'admin' }
     }
   ]
 });

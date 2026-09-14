@@ -2,6 +2,7 @@ package leaderboard
 
 import (
 	"database/sql"
+	"log/slog"
 	"net/http"
 
 	"github.com/gin-gonic/gin"
@@ -59,6 +60,7 @@ func (h *LeaderboardHandler) GetLeaderboard(c *gin.Context) {
 
 	rows, err := h.db.Query(baseQuery, args...)
 	if err != nil {
+		slog.Error("gagal mengambil data leaderboard", "error", err)
 		c.JSON(http.StatusInternalServerError, gin.H{"error": "gagal mengambil data leaderboard"})
 		return
 	}
@@ -185,12 +187,12 @@ func (h *LeaderboardHandler) AdminUserStats(c *gin.Context) {
 	}
 
 	type Summary struct {
-		PendingSubmissions     int       `json:"pending_submissions"`
-		ApprovedThisMonth      int       `json:"approved_this_month"`
-		RejectedThisMonth      int       `json:"rejected_this_month"`
-		RejectionRate          float64   `json:"rejection_rate"` // 0-100
-		TotalRedemptionsMonth  int       `json:"total_redemptions_month"`
-		TopUsers               []TopUser `json:"top_users"`
+		PendingSubmissions    int       `json:"pending_submissions"`
+		ApprovedThisMonth     int       `json:"approved_this_month"`
+		RejectedThisMonth     int       `json:"rejected_this_month"`
+		RejectionRate         float64   `json:"rejection_rate"` // 0-100
+		TotalRedemptionsMonth int       `json:"total_redemptions_month"`
+		TopUsers              []TopUser `json:"top_users"`
 	}
 
 	var summary Summary

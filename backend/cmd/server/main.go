@@ -101,6 +101,7 @@ func main() {
 			adminGroup.GET("/submissions/:id", submissionHandler.GetSubmissionDetail)
 			adminGroup.POST("/submissions/:id/approve", submissionHandler.Approve)
 			adminGroup.POST("/submissions/:id/reject", submissionHandler.Reject)
+			adminGroup.GET("/activity-log", submissionHandler.ActivityLog)
 
 			// Category management
 			adminGroup.POST("/categories", masterHandler.CreateCategory)

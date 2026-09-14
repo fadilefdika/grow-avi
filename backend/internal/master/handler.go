@@ -2,6 +2,7 @@ package master
 
 import (
 	"database/sql"
+	"log/slog"
 	"net/http"
 	"strconv"
 
@@ -60,6 +61,7 @@ func (h *MasterHandler) GetCategories(c *gin.Context) {
 	var total int
 	err := h.db.QueryRow(countQuery, args...).Scan(&total)
 	if err != nil {
+		slog.Error("gagal menghitung total kategori", "error", err)
 		c.JSON(http.StatusInternalServerError, gin.H{"error": "gagal menghitung total kategori"})
 		return
 	}
@@ -71,7 +73,7 @@ func (h *MasterHandler) GetCategories(c *gin.Context) {
 		if params.Sort != "id" {
 			query += ", id ASC"
 		}
-		
+
 		// Add offset params
 		args = append(args, params.Offset, params.Limit)
 		argOffsetIdx := len(args) - 1
@@ -82,6 +84,7 @@ func (h *MasterHandler) GetCategories(c *gin.Context) {
 	// 5. Execute query
 	rows, err := h.db.Query(query, args...)
 	if err != nil {
+		slog.Error("gagal mengambil data kategori", "error", err)
 		c.JSON(http.StatusInternalServerError, gin.H{"error": "gagal mengambil data kategori"})
 		return
 	}
@@ -99,7 +102,7 @@ func (h *MasterHandler) GetCategories(c *gin.Context) {
 	if categories == nil {
 		categories = []Category{}
 	}
-	
+
 	c.JSON(http.StatusOK, gin.H{
 		"data":  categories,
 		"total": total,
@@ -146,6 +149,7 @@ func (h *MasterHandler) GetActivities(c *gin.Context) {
 	var total int
 	err := h.db.QueryRow(countQuery, args...).Scan(&total)
 	if err != nil {
+		slog.Error("gagal menghitung total aktivitas", "error", err)
 		c.JSON(http.StatusInternalServerError, gin.H{"error": "gagal menghitung total aktivitas"})
 		return
 	}
@@ -163,6 +167,7 @@ func (h *MasterHandler) GetActivities(c *gin.Context) {
 	// 5. Execute query
 	rows, err := h.db.Query(query, args...)
 	if err != nil {
+		slog.Error("gagal mengambil data aktivitas", "error", err)
 		c.JSON(http.StatusInternalServerError, gin.H{"error": "gagal mengambil data aktivitas"})
 		return
 	}
@@ -201,6 +206,7 @@ func (h *MasterHandler) CreateCategory(c *gin.Context) {
 	var newID int64
 	err := h.db.QueryRow("INSERT INTO categories (name) OUTPUT INSERTED.id VALUES (@p1)", req.Name).Scan(&newID)
 	if err != nil {
+		slog.Error("gagal membuat kategori", "error", err)
 		c.JSON(http.StatusInternalServerError, gin.H{"error": "gagal membuat kategori"})
 		return
 	}
@@ -217,6 +223,7 @@ func (h *MasterHandler) UpdateCategory(c *gin.Context) {
 	}
 	_, err := h.db.Exec("UPDATE categories SET name = @p1, updated_at = GETDATE() WHERE id = @p2 AND deleted_at IS NULL", req.Name, id)
 	if err != nil {
+		slog.Error("gagal update kategori", "error", err)
 		c.JSON(http.StatusInternalServerError, gin.H{"error": "gagal update kategori"})
 		return
 	}
@@ -228,6 +235,7 @@ func (h *MasterHandler) DeleteCategory(c *gin.Context) {
 	id := c.Param("id")
 	_, err := h.db.Exec("UPDATE categories SET deleted_at = GETDATE(), is_active = 0 WHERE id = @p1 AND deleted_at IS NULL", id)
 	if err != nil {
+		slog.Error("gagal menghapus kategori", "error", err)
 		c.JSON(http.StatusInternalServerError, gin.H{"error": "gagal menghapus kategori"})
 		return
 	}
@@ -258,6 +266,7 @@ func (h *MasterHandler) CreateActivity(c *gin.Context) {
 		req.CategoryID, req.Name, req.DefaultPoints, customInput,
 	).Scan(&newID)
 	if err != nil {
+		slog.Error("gagal membuat aktivitas", "error", err)
 		c.JSON(http.StatusInternalServerError, gin.H{"error": "gagal membuat aktivitas"})
 		return
 	}
@@ -281,6 +290,7 @@ func (h *MasterHandler) UpdateActivity(c *gin.Context) {
 		req.CategoryID, req.Name, req.DefaultPoints, customInput, id,
 	)
 	if err != nil {
+		slog.Error("gagal update aktivitas", "error", err)
 		c.JSON(http.StatusInternalServerError, gin.H{"error": "gagal update aktivitas"})
 		return
 	}
@@ -292,6 +302,7 @@ func (h *MasterHandler) DeleteActivity(c *gin.Context) {
 	id := c.Param("id")
 	_, err := h.db.Exec("UPDATE activities SET deleted_at = GETDATE(), is_active = 0 WHERE id = @p1 AND deleted_at IS NULL", id)
 	if err != nil {
+		slog.Error("gagal menghapus aktivitas", "error", err)
 		c.JSON(http.StatusInternalServerError, gin.H{"error": "gagal menghapus aktivitas"})
 		return
 	}

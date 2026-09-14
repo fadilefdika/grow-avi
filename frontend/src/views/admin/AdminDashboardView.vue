@@ -58,7 +58,7 @@
       <div class="bg-white rounded-xl shadow-sm border border-gray-100 overflow-hidden">
         <div class="px-6 py-4 border-b border-gray-100 bg-gray-50 flex justify-between items-center">
           <h2 class="text-lg font-bold text-gray-800">Top 5 Karyawan</h2>
-          <router-link to="/leaderboard" class="text-sm text-primary font-medium hover:underline">Lihat Lengkap</router-link>
+          <router-link to="/admin/leaderboard" class="text-sm text-primary font-medium hover:underline">Lihat Lengkap</router-link>
         </div>
         <div v-if="isLoading" class="p-8 text-center text-gray-500">Memuat data...</div>
         <div v-else-if="stats.topUsers.length === 0" class="p-8 text-center text-gray-500">Belum ada data poin.</div>

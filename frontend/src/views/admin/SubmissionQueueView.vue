@@ -48,7 +48,7 @@
           <template #cell-default_points="{ value }">
             <span class="px-2 py-1 bg-blue-50 text-blue-700 rounded-md font-bold text-xs">{{ value }} pts</span>
           </template>
-          <template #row-actions="{ row }">
+          <template #actions="{ row }">
             <button @click="openDetail(row.id)" class="text-primary hover:text-blue-900 font-semibold bg-blue-50 hover:bg-blue-100 px-3 py-1.5 rounded-lg transition-colors">Review</button>
           </template>
         </DataTable>
@@ -92,7 +92,7 @@
                   </div>
                   <div>
                     <p class="text-xs text-gray-500">Tanggal Pelaksanaan</p>
-                    <p class="font-medium text-gray-900">{{ formatDate(selectedDetail.activity_date) }}</p>
+                    <p class="font-medium text-gray-900">{{ formatDate(selectedDetail.activity_date) }} WIB</p>
                   </div>
                   <div v-if="selectedDetail.custom_reference.Valid">
                     <p class="text-xs text-gray-500">Keterangan / Nomor SS</p>
@@ -106,7 +106,7 @@
                 <div class="bg-blue-50 p-4 rounded-xl border border-blue-100">
                   <label class="block text-sm font-medium text-blue-900 mb-2">Poin yang Diberikan</label>
                   <div class="flex items-center">
-                    <input type="number" v-model="pointsOverride" class="w-24 px-3 py-2 border border-blue-200 rounded-lg shadow-sm focus:outline-none focus:ring-1 focus:ring-primary focus:border-primary text-lg font-bold text-primary" />
+                    <input type="number" v-model="pointsOverride" @wheel.prevent class="w-24 px-3 py-2 border border-blue-200 rounded-lg shadow-sm focus:outline-none focus:ring-1 focus:ring-primary focus:border-primary text-lg font-bold text-primary [appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none" />
                     <span class="ml-2 text-sm font-medium text-blue-700">pts (Base: {{ selectedDetail.default_points }})</span>
                   </div>
                   <p class="text-xs text-blue-600 mt-2">Anda bisa mengubah poin default jika aktivitas ini bersifat dinamis (misal: Inovasi).</p>
@@ -170,6 +170,7 @@
 import { ref, onMounted } from 'vue';
 import { useRouter } from 'vue-router';
 import { useAuthStore } from '../../stores/auth';
+import { useToast } from 'vue-toastification';
 import apiClient from '../../api/client';
 import AdminSidebar from '../../components/layout/AdminSidebar.vue';
 import DataTable from '../../components/ui/DataTable.vue';
@@ -195,6 +196,7 @@ const actionType = ref<'reject' | null>(null);
 const adminNotes = ref('');
 const isProcessing = ref(false);
 const error = ref('');
+const toast = useToast();
 
 const fetchQueue = async () => {
   isLoading.value = true;
@@ -218,12 +220,16 @@ const openDetail = async (id: number) => {
   try {
     const res = await apiClient.get(`/admin/submissions/${id}`);
     selectedDetail.value = res.data.data;
+    console.log(selectedDetail.value.evidence);
+    
     pointsOverride.value = res.data.data.default_points;
     actionType.value = null;
     adminNotes.value = '';
     error.value = '';
-  } catch (err) {
-    alert("Gagal load detail pengajuan");
+  } catch (err: any) {
+    console.error(err);
+    const errorMsg = err.response?.data?.error || "Gagal load detail pengajuan";
+    alert(errorMsg);
   }
 };
 
@@ -239,10 +245,13 @@ const submitApprove = async () => {
     await apiClient.post(`/admin/submissions/${selectedDetail.value.id}/approve`, {
       points_override: pointsOverride.value
     });
+    toast.success('Pengajuan berhasil di-approve!');
     closeDetail();
     fetchQueue();
   } catch (err: any) {
-    error.value = err.response?.data?.error || 'Terjadi kesalahan saat approve';
+    const errorMsg = err.response?.data?.error || 'Terjadi kesalahan saat approve';
+    error.value = errorMsg;
+    toast.error(errorMsg);
   } finally {
     isProcessing.value = false;
   }
@@ -256,10 +265,13 @@ const submitReject = async () => {
     await apiClient.post(`/admin/submissions/${selectedDetail.value.id}/reject`, {
       admin_notes: adminNotes.value
     });
+    toast.success('Pengajuan telah ditolak.');
     closeDetail();
     fetchQueue();
   } catch (err: any) {
-    error.value = err.response?.data?.error || 'Terjadi kesalahan saat reject';
+    const errorMsg = err.response?.data?.error || 'Terjadi kesalahan saat reject';
+    error.value = errorMsg;
+    toast.error(errorMsg);
   } finally {
     isProcessing.value = false;
   }

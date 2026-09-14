@@ -52,7 +52,7 @@
               </span>
             </th>
             <!-- Actions column if slot is provided -->
-            <th v-if="$slots['row-actions']" class="px-4 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">Aksi</th>
+            <th v-if="$slots.actions" class="px-4 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">Aksi</th>
           </tr>
         </thead>
         <tbody class="bg-white divide-y divide-gray-200">
@@ -87,8 +87,8 @@
               </slot>
             </td>
             <!-- Actions slot -->
-            <td v-if="$slots['row-actions']" class="px-4 py-3 text-right text-sm font-medium whitespace-nowrap">
-              <slot name="row-actions" :row="row" />
+            <td v-if="$slots.actions" class="px-4 py-3 text-right text-sm font-medium whitespace-nowrap">
+              <slot name="actions" :row="row" />
             </td>
           </tr>
         </tbody>

@@ -9,6 +9,7 @@ import (
 	_ "image/jpeg"
 	_ "image/png"
 	"io"
+	"log/slog"
 	"net/http"
 	"os"
 	"os/exec"
@@ -166,6 +167,7 @@ func (h *SubmissionHandler) Create(c *gin.Context) {
 
 			f, err := fh.Open()
 			if err != nil {
+				slog.Error("gagal membuka file upload", "error", err)
 				c.JSON(http.StatusInternalServerError, gin.H{"error": "gagal membuka file upload"})
 				return
 			}
@@ -185,6 +187,7 @@ func (h *SubmissionHandler) Create(c *gin.Context) {
 			filePath := filepath.Join(dirPath, filename)
 
 			if err := os.WriteFile(filePath, imgBytes, 0644); err != nil {
+				slog.Error("gagal menyimpan file", "error", err)
 				c.JSON(http.StatusInternalServerError, gin.H{"error": "gagal menyimpan file"})
 				return
 			}
@@ -196,6 +199,7 @@ func (h *SubmissionHandler) Create(c *gin.Context) {
 
 	growID, err := h.generateGrowID()
 	if err != nil {
+		slog.Error("gagal generate GROW ID", "error", err)
 		c.JSON(http.StatusInternalServerError, gin.H{"error": "gagal generate GROW ID"})
 		return
 	}
@@ -214,6 +218,7 @@ func (h *SubmissionHandler) Create(c *gin.Context) {
 		for _, sf := range savedFiles {
 			os.Remove(sf.relativePath)
 		}
+		slog.Error("gagal menyimpan pengajuan", "error", err)
 		c.JSON(http.StatusInternalServerError, gin.H{"error": "gagal menyimpan pengajuan"})
 		return
 	}
@@ -239,7 +244,7 @@ func (h *SubmissionHandler) MySubmissions(c *gin.Context) {
 	rows, err := h.db.Query(
 		`SELECT s.id, s.grow_id, a.name as activity_name, cat.name as category_name,
 		CONVERT(varchar, s.activity_date, 23) as activity_date,
-		s.custom_reference, s.status, s.points_awarded, s.admin_notes, s.created_at
+		s.custom_reference, s.status, COALESCE(s.points_awarded, 0), s.admin_notes, s.created_at
 		FROM activity_submissions s
 		JOIN activities a ON s.activity_id = a.id
 		JOIN categories cat ON a.category_id = cat.id
@@ -248,6 +253,7 @@ func (h *SubmissionHandler) MySubmissions(c *gin.Context) {
 		npk,
 	)
 	if err != nil {
+		slog.Error("gagal mengambil data pengajuan", "error", err)
 		c.JSON(http.StatusInternalServerError, gin.H{"error": "gagal mengambil data pengajuan"})
 		return
 	}
@@ -315,9 +321,9 @@ func (h *SubmissionHandler) GetSubmissionDetail(c *gin.Context) {
 	var det Detail
 	err := h.db.QueryRow(
 		`SELECT s.id, s.grow_id, s.npk, s.user_name, s.department,
-		a.name, cat.name, a.default_points,
+		a.name, cat.name, COALESCE(a.default_points, 0),
 		CONVERT(varchar, s.activity_date, 23),
-		s.custom_reference, s.status, s.points_awarded, s.admin_notes,
+		s.custom_reference, s.status, COALESCE(s.points_awarded, 0), s.admin_notes,
 		s.reviewed_by_npk, s.reviewed_at, s.created_at
 		FROM activity_submissions s
 		JOIN activities a ON s.activity_id = a.id
@@ -332,6 +338,7 @@ func (h *SubmissionHandler) GetSubmissionDetail(c *gin.Context) {
 		return
 	}
 	if err != nil {
+		slog.Error("gagal mengambil detail pengajuan", "error", err)
 		c.JSON(http.StatusInternalServerError, gin.H{"error": "gagal mengambil detail pengajuan"})
 		return
 	}
@@ -378,7 +385,7 @@ func (h *SubmissionHandler) PendingQueue(c *gin.Context) {
 
 	// 2. Build Query
 	query := `SELECT s.id, s.grow_id, s.npk, s.user_name, s.department,
-		a.name as activity_name, cat.name as category_name, a.default_points,
+		a.name as activity_name, cat.name as category_name, COALESCE(a.default_points, 0),
 		CONVERT(varchar, s.activity_date, 23) as activity_date,
 		s.custom_reference, s.created_at
 		FROM activity_submissions s
@@ -404,6 +411,7 @@ func (h *SubmissionHandler) PendingQueue(c *gin.Context) {
 	var total int
 	err := h.db.QueryRow(countQuery, args...).Scan(&total)
 	if err != nil {
+		slog.Error("gagal menghitung total antrian", "error", err)
 		c.JSON(http.StatusInternalServerError, gin.H{"error": "gagal menghitung total antrian"})
 		return
 	}
@@ -423,6 +431,7 @@ func (h *SubmissionHandler) PendingQueue(c *gin.Context) {
 	// 5. Execute query
 	rows, err := h.db.Query(query, args...)
 	if err != nil {
+		slog.Error("gagal mengambil data antrian", "error", err)
 		c.JSON(http.StatusInternalServerError, gin.H{"error": "gagal mengambil data antrian"})
 		return
 	}
@@ -474,7 +483,7 @@ func (h *SubmissionHandler) Approve(c *gin.Context) {
 	var defaultPoints int
 	var status string
 	err := h.db.QueryRow(
-		`SELECT a.default_points, s.status
+		`SELECT COALESCE(a.default_points, 0), s.status
 		FROM activity_submissions s
 		JOIN activities a ON s.activity_id = a.id
 		WHERE s.id = @p1 AND s.deleted_at IS NULL`, id,
@@ -500,6 +509,7 @@ func (h *SubmissionHandler) Approve(c *gin.Context) {
 		pointsToAward, adminNPK, id,
 	)
 	if err != nil {
+		slog.Error("gagal approve pengajuan", "error", err)
 		c.JSON(http.StatusInternalServerError, gin.H{"error": "gagal approve pengajuan"})
 		return
 	}
@@ -539,6 +549,7 @@ func (h *SubmissionHandler) Reject(c *gin.Context) {
 		req.AdminNotes, adminNPK, id,
 	)
 	if err != nil {
+		slog.Error("gagal reject pengajuan", "error", err)
 		c.JSON(http.StatusInternalServerError, gin.H{"error": "gagal reject pengajuan"})
 		return
 	}
@@ -571,8 +582,163 @@ func (h *SubmissionHandler) Resubmit(c *gin.Context) {
 		WHERE id = @p1`, id,
 	)
 	if err != nil {
+		slog.Error("gagal resubmit pengajuan", "error", err)
 		c.JSON(http.StatusInternalServerError, gin.H{"error": "gagal resubmit pengajuan"})
 		return
 	}
 	c.JSON(http.StatusOK, gin.H{"message": "pengajuan berhasil dikirim ulang"})
+}
+
+// GET /api/admin/activity-log
+func (h *SubmissionHandler) ActivityLog(c *gin.Context) {
+	// Parse pagination and filter params
+	page, _ := strconv.Atoi(c.DefaultQuery("page", "1"))
+	limit, _ := strconv.Atoi(c.DefaultQuery("limit", "10"))
+	search := c.Query("search")
+	filterType := c.Query("type")
+	dateFrom := c.Query("date_from")
+	dateTo := c.Query("date_to")
+	sortField := c.DefaultQuery("sort", "activity_date")
+	order := c.DefaultQuery("order", "desc")
+
+	if page < 1 {
+		page = 1
+	}
+	if limit < 1 {
+		limit = 10
+	}
+	offset := (page - 1) * limit
+
+	// Allowed sort fields mapped to CTE column names
+	sortCols := map[string]string{
+		"grow_id":       "grow_id",
+		"activity_date": "activity_date",
+		"points":        "points",
+		"user_name":     "user_name",
+	}
+	dbSort := sortCols[sortField]
+	if dbSort == "" {
+		dbSort = "activity_date"
+	}
+	if strings.ToLower(order) != "asc" {
+		order = "DESC"
+	} else {
+		order = "ASC"
+	}
+
+	// Base CTE (Common Table Expression) to unify both tables
+	cteQuery := `
+		WITH ActivityHistory AS (
+			SELECT 
+				grow_id, 
+				npk, 
+				user_name, 
+				status as activity_type, 
+				COALESCE(points_awarded, 0) as points, 
+				created_at as activity_date
+			FROM activity_submissions
+			WHERE status IN ('APPROVED', 'REJECTED') AND deleted_at IS NULL
+
+			UNION ALL
+
+			SELECT 
+				'-' as grow_id, 
+				rr.npk, 
+				ISNULL((SELECT TOP 1 user_name FROM activity_submissions WHERE npk = rr.npk ORDER BY id DESC), rr.npk) as user_name,
+				'REDEEM' as activity_type, 
+				rr.points_spent as points, 
+				rr.created_at as activity_date
+			FROM reward_redemptions rr
+			WHERE rr.deleted_at IS NULL
+		)
+	`
+
+	var conditions []string
+	var args []interface{}
+	paramIdx := 1
+
+	if search != "" {
+		conditions = append(conditions, "grow_id LIKE @p"+strconv.Itoa(paramIdx))
+		args = append(args, "%"+search+"%")
+		paramIdx++
+	}
+	if filterType != "" {
+		conditions = append(conditions, "activity_type = @p"+strconv.Itoa(paramIdx))
+		args = append(args, filterType)
+		paramIdx++
+	}
+	if dateFrom != "" {
+		conditions = append(conditions, "CAST(activity_date AS DATE) >= @p"+strconv.Itoa(paramIdx))
+		args = append(args, dateFrom)
+		paramIdx++
+	}
+	if dateTo != "" {
+		conditions = append(conditions, "CAST(activity_date AS DATE) <= @p"+strconv.Itoa(paramIdx))
+		args = append(args, dateTo)
+		paramIdx++
+	}
+
+	whereClause := ""
+	if len(conditions) > 0 {
+		whereClause = "WHERE " + strings.Join(conditions, " AND ")
+	}
+
+	// 1. Get total count
+	countQuery := cteQuery + ` SELECT COUNT(*) FROM ActivityHistory ` + whereClause
+	var total int
+	err := h.db.QueryRow(countQuery, args...).Scan(&total)
+	if err != nil {
+		slog.Error("gagal menghitung total activity log", "error", err)
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "gagal menghitung total activity log"})
+		return
+	}
+
+	// 2. Get paginated data
+	dataQuery := cteQuery + ` SELECT grow_id, npk, user_name, activity_type, points, activity_date FROM ActivityHistory ` + whereClause
+
+	// Add sorting and pagination
+	dataQuery += fmt.Sprintf(" ORDER BY %s %s", dbSort, order)
+	// Tie breaker for consistent pagination
+	if dbSort != "activity_date" {
+		dataQuery += ", activity_date DESC"
+	}
+
+	dataQuery += fmt.Sprintf(" OFFSET @p%d ROWS FETCH NEXT @p%d ROWS ONLY", paramIdx, paramIdx+1)
+	args = append(args, offset, limit)
+
+	rows, err := h.db.Query(dataQuery, args...)
+	if err != nil {
+		slog.Error("gagal mengambil data activity log", "error", err)
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "gagal mengambil data activity log"})
+		return
+	}
+	defer rows.Close()
+
+	type LogItem struct {
+		GrowID       string    `json:"grow_id"`
+		NPK          string    `json:"npk"`
+		UserName     string    `json:"user_name"`
+		ActivityType string    `json:"activity_type"`
+		Points       int       `json:"points"`
+		ActivityDate time.Time `json:"activity_date"`
+	}
+
+	var items []LogItem
+	for rows.Next() {
+		var it LogItem
+		err := rows.Scan(&it.GrowID, &it.NPK, &it.UserName, &it.ActivityType, &it.Points, &it.ActivityDate)
+		if err != nil {
+			slog.Error("gagal scan row activity log", "error", err)
+			continue
+		}
+		items = append(items, it)
+	}
+	if items == nil {
+		items = []LogItem{}
+	}
+
+	c.JSON(http.StatusOK, gin.H{
+		"data":  items,
+		"total": total,
+	})
 }
