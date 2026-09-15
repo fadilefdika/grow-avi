@@ -4,9 +4,11 @@ import (
 	"crypto/sha256"
 	"database/sql"
 	"encoding/hex"
+	"encoding/json"
 	"fmt"
 	"log/slog"
 	"net/http"
+	"os"
 	"time"
 
 	"github.com/gin-gonic/gin"
@@ -24,6 +26,7 @@ func NewAuthHandler(db *sql.DB) *AuthHandler {
 type LoginRequest struct {
 	NPK      string `json:"npk" binding:"required"`
 	Password string `json:"password" binding:"required"`
+	Type     string `json:"type" binding:"required"`
 }
 
 func (h *AuthHandler) Login(c *gin.Context) {
@@ -34,26 +37,20 @@ func (h *AuthHandler) Login(c *gin.Context) {
 	}
 
 	// Check Lockout
-	failedCount := h.countFailedAttempts(req.NPK, 15*time.Minute)
-	if failedCount >= 5 {
-		c.JSON(http.StatusTooManyRequests, gin.H{"error": "akun terkunci sementara karena terlalu banyak percobaan gagal"})
+	isLocked, remainingSec := h.checkLockout(req.NPK, 5*time.Minute)
+	if isLocked {
+		c.JSON(http.StatusTooManyRequests, gin.H{
+			"error": "akun terkunci sementara karena terlalu banyak percobaan gagal",
+			"retry_after": remainingSec,
+		})
 		return
-	}
-
-	// Cek apakah NPK hanya berisi angka (Employee) atau ada huruf (Admin)
-	isNumeric := true
-	for _, char := range req.NPK {
-		if char < '0' || char > '9' {
-			isNumeric = false
-			break
-		}
 	}
 
 	role := "employee"
 	var profile *DakarProfile
 
-	if !isNumeric {
-		// 1. Asumsikan Admin (karena mengandung huruf/bukan angka murni)
+	if req.Type == "admin" {
+		// 1. Asumsikan Admin
 		var adminId int
 		var hashedPwd sql.NullString
 		err := h.db.QueryRow("SELECT id, password FROM admin_users WHERE npk = @p1 AND is_active = 1 AND deleted_at IS NULL", sql.Named("p1", req.NPK)).Scan(&adminId, &hashedPwd)
@@ -117,8 +114,8 @@ func (h *AuthHandler) issueTokens(c *gin.Context, profile *DakarProfile, role st
 	plainRefresh, hashedRefresh := GenerateRefreshToken()
 	expiresAt := time.Now().Add(168 * time.Hour) // 7 days
 
-	_, err = h.db.Exec("INSERT INTO refresh_tokens (npk, token_hash, role, expires_at, user_agent) VALUES (@p1, @p2, @p3, @p4, @p5)",
-		profile.NPK, hashedRefresh, role, expiresAt, c.Request.UserAgent())
+	_, err = h.db.Exec("INSERT INTO refresh_tokens (npk, token_hash, role, expires_at, user_agent, user_name, department) VALUES (@p1, @p2, @p3, @p4, @p5, @p6, @p7)",
+		profile.NPK, hashedRefresh, role, expiresAt, c.Request.UserAgent(), profile.UserName, profile.Department)
 
 	if err != nil {
 		slog.Error("gagal menyimpan refresh token", "error", err)
@@ -142,17 +139,31 @@ func (h *AuthHandler) issueTokens(c *gin.Context, profile *DakarProfile, role st
 	})
 }
 
-func (h *AuthHandler) countFailedAttempts(npk string, window time.Duration) int {
+func (h *AuthHandler) checkLockout(npk string, window time.Duration) (bool, int) {
 	var count int
-	since := time.Now().Add(-window)
-	// For SQL Server, parameterized queries use @p1 or ? depending on driver.
-	// go-mssqldb uses @p1, but standard database/sql uses ? or named parameters.
-	// We'll use standard sql server named parameter or positional @p1
-	err := h.db.QueryRow("SELECT COUNT(*) FROM login_attempts WHERE npk = @p1 AND success = 0 AND created_at >= @p2", npk, since).Scan(&count)
-	if err != nil {
-		return 0
+	// Hitung murni menggunakan SQL Server untuk menghindari isu zona waktu antara Go dan DB
+	err := h.db.QueryRow("SELECT COUNT(*) FROM login_attempts WHERE npk = @p1 AND success = 0 AND created_at >= DATEADD(minute, -5, GETDATE())", npk).Scan(&count)
+	if err != nil || count < 5 {
+		return false, 0
 	}
-	return count
+
+	var remaining int
+	err = h.db.QueryRow(`
+		SELECT DATEDIFF(second, GETDATE(), DATEADD(minute, 5, created_at))
+		FROM login_attempts 
+		WHERE npk = @p1 AND success = 0 AND created_at >= DATEADD(minute, -5, GETDATE())
+		ORDER BY created_at DESC 
+		OFFSET 4 ROWS FETCH NEXT 1 ROWS ONLY
+	`, npk).Scan(&remaining)
+
+	if err != nil {
+		return true, 300 // fallback 5 menit
+	}
+
+	if remaining < 0 {
+		remaining = 0
+	}
+	return true, remaining
 }
 
 func (h *AuthHandler) logAttempt(npk, ip string, success bool) {
@@ -213,14 +224,66 @@ func (h *AuthHandler) Refresh(c *gin.Context) {
 	// Rotate token
 	h.db.Exec("UPDATE refresh_tokens SET revoked_at = GETDATE() WHERE token_hash = @p1", hashedToken)
 
-	// Get Profile from Dakar (mock)
-	// In a real scenario, you might just fetch from Dakar or DB to refresh profile data.
-	// For this mock, we just generate tokens using the NPK and role we already have.
+	// Fetch user_name and department that were saved when the token was issued
+	var userName, department string
+	var rawUserName, rawDept sql.NullString
+	h.db.QueryRow("SELECT user_name, department FROM refresh_tokens WHERE token_hash = @p1", hashedToken).Scan(&rawUserName, &rawDept)
+
+	// If user_name was never stored (old tokens before migration) and role is employee,
+	// try to fetch real name from Awork API
+	if role == "employee" && (!rawUserName.Valid || rawUserName.String == "" || rawUserName.String == npk) {
+		aworkURL := os.Getenv("AWORK_API_URL")
+		aworkKey := os.Getenv("AWORK_API_KEY")
+		if aworkURL != "" && aworkKey != "" {
+			req, err := http.NewRequest("GET", aworkURL, nil)
+			if err == nil {
+				req.Header.Add("Authorization", "Bearer "+aworkKey)
+				client := &http.Client{Timeout: 10 * time.Second}
+				resp, err := client.Do(req)
+				if err == nil && resp.StatusCode == 200 {
+					defer resp.Body.Close()
+					type aworkUser struct {
+						NPK  string `json:"npk"`
+						Name string `json:"fullname"`
+						Dept string `json:"department"`
+					}
+					var apiResp struct{ Data []aworkUser `json:"data"` }
+					if json.NewDecoder(resp.Body).Decode(&apiResp) == nil {
+						for _, u := range apiResp.Data {
+							if u.NPK == npk {
+								userName = u.Name
+								department = u.Dept
+								// Update stored value for next refresh
+								h.db.Exec("UPDATE refresh_tokens SET user_name = @p1, department = @p2 WHERE token_hash = @p3", userName, department, hashedToken)
+								break
+							}
+						}
+					}
+				}
+			}
+		}
+	}
+
+	// Final fallback
+	if userName == "" {
+		userName = rawUserName.String
+		if userName == "" {
+			userName = npk
+		}
+	}
+	if department == "" {
+		department = rawDept.String
+		if department == "" {
+			department = "Unknown"
+		}
+	}
+
 	profile := &DakarProfile{
 		NPK:        npk,
-		UserName:   "Admin", // You'd ideally cache this or query Dakar again
-		Department: "Admin",
+		UserName:   userName,
+		Department: department,
 	}
 
 	h.issueTokens(c, profile, role)
 }
+

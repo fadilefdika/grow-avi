@@ -208,6 +208,61 @@ func (h *RewardHandler) Redeem(c *gin.Context) {
 	})
 }
 
+// GET /api/admin/redemptions/:id
+func (h *RewardHandler) GetRedemptionDetail(c *gin.Context) {
+	idStr := c.Param("id")
+	id, err := strconv.ParseInt(idStr, 10, 64)
+	if err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "ID tidak valid"})
+		return
+	}
+
+	var detail struct {
+		ID            int64     `json:"id"`
+		NPK           string    `json:"npk"`
+		UserName      string    `json:"user_name"`
+		RewardTitle   string    `json:"reward_title"`
+		PointsSpent   int       `json:"points_spent"`
+		Status        string    `json:"status"`
+		CreatedAt     time.Time `json:"created_at"`
+	}
+
+	// For UserName, we try to get it from activity_submissions since we don't have a users table
+	err = h.db.QueryRow(`
+		SELECT 
+			rr.id, 
+			rr.npk, 
+			ISNULL((SELECT TOP 1 user_name FROM activity_submissions WHERE npk = rr.npk ORDER BY id DESC), rr.npk) as user_name,
+			r.title, 
+			rr.points_spent, 
+			rr.status, 
+			rr.created_at
+		FROM reward_redemptions rr
+		JOIN rewards r ON rr.reward_id = r.id
+		WHERE rr.id = @p1 AND rr.deleted_at IS NULL
+	`, id).Scan(
+		&detail.ID,
+		&detail.NPK,
+		&detail.UserName,
+		&detail.RewardTitle,
+		&detail.PointsSpent,
+		&detail.Status,
+		&detail.CreatedAt,
+	)
+
+	if err != nil {
+		if err == sql.ErrNoRows {
+			c.JSON(http.StatusNotFound, gin.H{"error": "Redemption tidak ditemukan"})
+			return
+		}
+		slog.Error("gagal mengambil detail redemption", "error", err)
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "Gagal mengambil detail redemption"})
+		return
+	}
+
+	c.JSON(http.StatusOK, gin.H{"data": detail})
+}
+
 // GET /api/rewards/history — employee's own redemption history
 func (h *RewardHandler) MyRedemptions(c *gin.Context) {
 	npk := c.GetString("npk")

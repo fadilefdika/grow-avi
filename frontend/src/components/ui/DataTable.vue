@@ -69,7 +69,8 @@
           <tr
             v-for="(row, idx) in paginatedRows"
             :key="row.id ?? idx"
-            class="hover:bg-blue-50/30 transition-colors"
+            class="hover:bg-blue-50/30 transition-colors cursor-pointer"
+            @click="emit('rowClick', row)"
           >
             <!-- Row number -->
             <td class="px-4 py-3 text-center text-xs text-gray-400 font-medium">
@@ -176,6 +177,7 @@ const props = defineProps<{
 
 const emit = defineEmits<{
   (e: 'change', params: { page: number; limit: number; search: string; sort: string; order: 'asc' | 'desc' }): void;
+  (e: 'rowClick', row: any): void;
 }>();
 
 // ---- Pagination ----

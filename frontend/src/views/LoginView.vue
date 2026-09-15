@@ -117,6 +117,14 @@ const usernameInput = ref('');
 const passwordInput = ref('');
 const isLoading = ref(false);
 const error = ref('');
+const countdown = ref(0);
+let timerInterval: ReturnType<typeof setInterval> | null = null;
+
+const formatCountdown = (seconds: number) => {
+  const m = Math.floor(seconds / 60);
+  const s = seconds % 60;
+  return `${m} menit ${s} detik`;
+};
 
 const handleLogin = async () => {
   isLoading.value = true;
@@ -125,7 +133,8 @@ const handleLogin = async () => {
   try {
     const response = await apiClient.post('/auth/login', {
       npk: usernameInput.value,
-      password: passwordInput.value
+      password: passwordInput.value,
+      type: loginType.value
     });
     
     const { access_token, user } = response.data;
@@ -145,7 +154,23 @@ const handleLogin = async () => {
   } catch (err: any) {
     if (err.response) {
       if (err.response.status === 429) {
-        error.value = 'Akun terkunci karena terlalu banyak percobaan gagal. Coba lagi dalam 15 menit.';
+        const retryAfter = err.response.data.retry_after;
+        if (retryAfter && retryAfter > 0) {
+          countdown.value = retryAfter;
+          error.value = `Akun terkunci karena terlalu banyak percobaan gagal. Coba lagi dalam ${formatCountdown(countdown.value)}.`;
+          if (timerInterval) clearInterval(timerInterval);
+          timerInterval = setInterval(() => {
+            countdown.value--;
+            if (countdown.value <= 0) {
+              if (timerInterval) clearInterval(timerInterval);
+              error.value = ''; // clear error so user knows they can try again
+            } else {
+              error.value = `Akun terkunci karena terlalu banyak percobaan gagal. Coba lagi dalam ${formatCountdown(countdown.value)}.`;
+            }
+          }, 1000);
+        } else {
+          error.value = 'Akun terkunci karena terlalu banyak percobaan gagal. Coba lagi nanti.';
+        }
       } else if (err.response.status === 401) {
         error.value = loginType.value === 'employee' ? 'NPK atau Password salah.' : 'Username atau Password salah.';
       } else {

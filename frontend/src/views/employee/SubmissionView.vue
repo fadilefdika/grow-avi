@@ -238,7 +238,7 @@
           class="bg-white rounded-xl shadow-sm p-6 mb-6 border border-gray-100"
         >
           <!-- Nama Kegiatan / Aktivitas -->
-          <div class="mb-5" v-if="form.categoryId !== 8">
+          <div class="mb-5" v-if="form.categoryId !== 8 && !isSubmitSS">
             <label class="block text-sm font-medium text-gray-900 mb-2"
               >Nama Kegiatan/Aktivitas
               <span class="text-red-500">*</span></label
@@ -253,7 +253,7 @@
           </div>
 
           <!-- Activity Date -->
-          <div class="mb-5">
+          <div class="mb-5" v-if="!isSubmitSS">
             <label class="block text-sm font-medium text-gray-900 mb-2"
               >Tanggal Aktivitas <span class="text-red-500">*</span></label
             >
@@ -266,22 +266,24 @@
           </div>
 
           <!-- Custom Reference (Only for SS / Innovation) -->
-          <div class="mb-5" v-if="form.categoryId === 4">
+          <div class="mb-5" v-if="isSubmitSS">
             <label class="block text-sm font-medium text-gray-900 mb-2"
-              >Nomor SS / Referensi (Opsional)</label
+              >Nomor SS / Referensi <span class="text-red-500">*</span></label
             >
             <input
               type="text"
               v-model="form.customReference"
+              :required="isSubmitSS"
               placeholder="Contoh: SS-2026-001"
               class="w-full px-4 py-2.5 rounded-md border border-gray-300 focus:ring-2 focus:ring-primary focus:border-primary outline-none transition-all text-sm"
             />
           </div>
 
           <!-- Evidence Upload -->
-          <div>
+          <div v-if="!isSubmitSS">
             <label class="block text-sm font-medium text-gray-900 mb-2"
-              >Unggah Bukti Foto <span class="text-red-500">*</span></label
+              >Lampiran File Pendukung
+              <span class="text-red-500">*</span></label
             >
             <div
               class="mt-1 flex justify-center px-6 pt-5 pb-6 border-2 border-gray-300 border-dashed rounded-lg hover:border-primary transition-colors cursor-pointer bg-gray-50"
@@ -395,12 +397,18 @@
 import { ref, computed, onMounted } from "vue";
 import { useAuthStore } from "../../stores/auth";
 import apiClient from "../../api/client";
+import axios from "axios";
 import { useToast } from "vue-toastification";
-import { useRouter } from "vue-router";
+import { useRouter, useRoute } from "vue-router";
 
 const auth = useAuthStore();
 const toast = useToast();
 const router = useRouter();
+const route = useRoute();
+
+const revisiId = computed(() => route.query.revisi_id);
+const isEditMode = computed(() => !!revisiId.value);
+const previousEvidence = ref<string[]>([]);
 
 const categories = ref<any[]>([]);
 const allActivities = ref<any[]>([]);
@@ -415,15 +423,67 @@ const fetchMasterData = async () => {
     console.log("ini cari categories", categories.value);
     allActivities.value = actRes.data.data || [];
   } catch (err) {
-    console.error("Failed to load master data", err);
+    console.error("Gagal mengambil daftar kategori", err);
   }
 };
 
-onMounted(() => {
-  fetchMasterData();
+const fetchSubmissionForEdit = async (id: string) => {
+  try {
+    const res = await apiClient.get(`/submissions/${id}`);
+    const data = res.data.data;
+    if (data.status !== 'REJECTED') {
+      toast.error('Hanya pengajuan yang ditolak yang dapat direvisi');
+      router.push('/dashboard');
+      return;
+    }
+    form.value.categoryId = data.category_id;
+    await fetchActivities();
+    form.value.activityId = data.activity_id;
+    form.value.activityDate = data.activity_date;
+    form.value.customActivityType = data.custom_activity_type?.Valid ? data.custom_activity_type.String : '';
+    form.value.customActivityName = data.custom_reference?.Valid ? data.custom_reference.String : '';
+    form.value.customReference = data.nomor_ss?.Valid ? data.nomor_ss.String : '';
+    
+    // Load old evidence as File objects so user can preview and delete
+    if (data.evidence && data.evidence.length > 0) {
+      for (let i = 0; i < data.evidence.length; i++) {
+        const url = data.evidence[i];
+        const filename = url.split('/').pop() || `lampiran_${i + 1}.jpg`;
+        try {
+          const resBlob = await axios.get(url, { responseType: 'blob' });
+          const file = new File([resBlob.data], filename, { type: resBlob.data.type || 'image/jpeg' });
+          const preview = URL.createObjectURL(file);
+          files.value.push({ file, preview, name: filename });
+        } catch (e) {
+          console.warn(`Gagal memuat lampiran lama: ${filename}`, e);
+        }
+      }
+    }
+  } catch (err) {
+    console.error("Gagal mengambil data pengajuan", err);
+    toast.error('Gagal mengambil data pengajuan untuk revisi');
+  }
+};
+
+const fetchActivities = async () => {
+  await fetchMasterData();
+};
+
+onMounted(async () => {
+  await fetchMasterData();
+  if (revisiId.value) {
+    await fetchSubmissionForEdit(revisiId.value as string);
+  }
 });
 
-const form = ref({
+const form = ref<{
+  categoryId: number | "";
+  activityId: number | string;
+  customActivityType: string;
+  customActivityName: string;
+  activityDate: string;
+  customReference: string;
+}>({
   categoryId: "",
   activityId: "",
   customActivityType: "",
@@ -432,7 +492,7 @@ const form = ref({
   customReference: "",
 });
 
-const files = ref<any[]>([]);
+const files = ref<{ file: File; preview: string; name: string }[]>([]);
 const fileInput = ref<any>(null);
 const isSubmitting = ref(false);
 const errorMessage = ref("");
@@ -442,6 +502,11 @@ const filteredActivities = computed(() => {
   return allActivities.value.filter(
     (a) => a.category_id === form.value.categoryId,
   );
+});
+
+const isSubmitSS = computed(() => {
+  const act = allActivities.value.find(a => a.id === form.value.activityId);
+  return act && act.name === 'Submit SS';
 });
 
 const triggerFileInput = () => {
@@ -464,26 +529,28 @@ const handleFileUpload = (event: any) => {
   for (let i = 0; i < selectedFiles.length; i++) {
     const file = selectedFiles[i];
     if (file.size > 10 * 1024 * 1024) {
-      errorMessage.value = "Terdapat file yang ukurannya melebihi 10MB.";
+      toast.error(`File "${file.name}" melebihi 10MB!`);
       continue;
     }
 
-    // Create preview URL
-    file.preview = URL.createObjectURL(file);
-    files.value.push(file);
+    const preview = URL.createObjectURL(file);
+    files.value.push({ file, preview, name: file.name });
   }
 
-  // Reset input
+  // Reset input so the same file can be re-selected
   event.target.value = "";
 };
 
 const removeFile = (index: number) => {
-  URL.revokeObjectURL(files.value[index].preview);
+  const removed = files.value[index];
+  if (removed.preview.startsWith('blob:')) {
+    URL.revokeObjectURL(removed.preview);
+  }
   files.value.splice(index, 1);
 };
 
 const submitForm = async () => {
-  if (files.value.length === 0) {
+  if (!isSubmitSS.value && files.value.length === 0) {
     errorMessage.value = "Anda harus mengunggah setidaknya 1 bukti aktivitas.";
     return;
   }
@@ -501,37 +568,51 @@ const submitForm = async () => {
 
   try {
     const formData = new FormData();
-    formData.append("activity_id", form.value.activityId);
+
+    if (isSubmitSS.value) {
+      form.value.activityDate = new Date().toISOString().split('T')[0];
+    }
+
+    formData.append("activity_id", String(form.value.activityId));
     formData.append("activity_date", form.value.activityDate);
 
     let referenceValue = form.value.customReference;
+    let actName = form.value.customActivityName;
+
+    if (form.value.customActivityType) {
+      formData.append("custom_activity_type", form.value.customActivityType);
+    }
     
-    // Gabungkan Nama Kegiatan Custom ke dalam Custom Reference 
-    // agar datanya tersimpan di backend (kolom custom_reference)
-    if (form.value.customActivityName && form.value.categoryId !== 8) {
-      if (referenceValue) {
-        referenceValue = `${form.value.customActivityName} (${referenceValue})`;
-      } else {
-        referenceValue = form.value.customActivityName;
-      }
+    if (actName && form.value.categoryId !== 8) {
+      formData.append("custom_reference", actName);
     }
     
     if (referenceValue) {
-      formData.append("custom_reference", referenceValue);
+      formData.append("nomor_ss", referenceValue);
     }
 
-    files.value.forEach((file) => {
-      formData.append("evidence", file);
+    files.value.forEach((f) => {
+      formData.append("evidence", f.file);
     });
 
-    const response = await apiClient.post("/submissions", formData, {
-      headers: {
-        "Content-Type": "multipart/form-data",
-      },
-    });
+    let response;
+    if (isEditMode.value) {
+      response = await apiClient.put(`/submissions/${revisiId.value}/resubmit`, formData, {
+        headers: {
+          "Content-Type": "multipart/form-data",
+        },
+      });
+      toast.success("Pengajuan berhasil direvisi dan dikirim ulang!");
+    } else {
+      response = await apiClient.post("/submissions", formData, {
+        headers: {
+          "Content-Type": "multipart/form-data",
+        },
+      });
+      toast.success(`Pengajuan berhasil dikirim! GROW ID: ${response.data.grow_id}`);
+    }
 
     isSubmitting.value = false;
-    toast.success(`Pengajuan berhasil dikirim! GROW ID: ${response.data.grow_id}`);
 
     // Reset form
     form.value = {

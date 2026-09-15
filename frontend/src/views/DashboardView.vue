@@ -87,7 +87,9 @@
       <div class="bg-white rounded-2xl p-5 shadow-sm border border-gray-100">
         <div class="flex justify-between items-center mb-4">
           <h3 class="font-bold text-gray-800">Riwayat Pengajuan</h3>
-          <button class="text-xs text-primary font-medium">Lihat Semua</button>
+          <button @click="showAll = !showAll" v-if="allSubmissions.length > 5" class="text-xs text-primary font-medium hover:underline">
+            {{ showAll ? 'Tampilkan Lebih Sedikit' : 'Lihat Semua' }}
+          </button>
         </div>
 
         <div v-if="isLoading" class="flex justify-center py-8">
@@ -97,7 +99,7 @@
           </svg>
         </div>
 
-        <div v-else-if="submissions.length === 0" class="text-center py-8">
+        <div v-else-if="allSubmissions.length === 0" class="text-center py-8">
           <div class="w-16 h-16 bg-gray-50 rounded-full flex items-center justify-center mx-auto mb-3">
             <svg xmlns="http://www.w3.org/2000/svg" class="h-8 w-8 text-gray-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
               <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
@@ -107,7 +109,7 @@
         </div>
 
         <div v-else class="space-y-3">
-          <div v-for="sub in submissions" :key="sub.id" class="flex items-center justify-between p-3 rounded-xl border border-gray-100 bg-gray-50/50">
+          <div v-for="sub in displayedSubmissions" :key="sub.id" @click="openDetail(sub)" class="flex items-center justify-between p-3 rounded-xl border border-gray-100 bg-gray-50/50 cursor-pointer hover:bg-gray-100 transition-colors group">
             <div class="flex items-center gap-3">
               <div :class="getStatusIconBg(sub.status)" class="w-10 h-10 rounded-full flex items-center justify-center shrink-0">
                 <svg v-if="sub.status === 'PENDING'" xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 text-yellow-600" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" /></svg>
@@ -129,22 +131,151 @@
 
       </div>
     </div>
+
+    <!-- Detail Modal -->
+    <div v-if="showDetailModal" class="fixed inset-0 z-50 flex items-center justify-center p-4 bg-gray-900/60 backdrop-blur-sm">
+      <div class="bg-white rounded-2xl shadow-xl w-full max-w-2xl max-h-[90vh] flex flex-col overflow-hidden">
+        <div class="px-6 py-4 border-b border-gray-100 flex justify-between items-center bg-gray-50 shrink-0">
+          <h3 class="text-lg font-bold text-gray-900">Detail Pengajuan</h3>
+          <button @click="closeDetailModal" class="text-gray-400 hover:text-gray-600 transition-colors">
+            <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/></svg>
+          </button>
+        </div>
+
+        <div class="p-6 overflow-y-auto">
+          <div v-if="isLoadingDetail" class="flex justify-center py-12">
+            <svg class="animate-spin h-8 w-8 text-primary" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+              <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
+              <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+            </svg>
+          </div>
+          
+          <div v-else-if="selectedDetail" class="space-y-6">
+            <div class="flex items-start justify-between">
+              <div>
+                <p class="text-xs text-gray-500 font-medium">GROW ID</p>
+                <p class="text-lg font-bold text-gray-900">{{ selectedDetail.grow_id }}</p>
+              </div>
+              <span :class="getStatusTextColor(selectedDetail.status)" :style="{ backgroundColor: getStatusBgColor(selectedDetail.status) }" class="px-3 py-1 text-xs font-bold rounded-full border">
+                {{ selectedDetail.status }}
+              </span>
+            </div>
+
+            <div class="grid grid-cols-2 gap-4">
+              <div class="bg-gray-50 p-3 rounded-lg border border-gray-100" v-if="selectedDetail.category_name !== 'INNOVATION'">
+                <p class="text-xs text-gray-500 mb-1">Aktivitas</p>
+                <p class="text-sm font-semibold text-gray-900">{{ (selectedDetail.activity_name === 'Yang lain (Custom)' && selectedDetail.custom_activity_type?.Valid) ? selectedDetail.custom_activity_type.String : (selectedDetail.activity_name || '-') }}</p>
+              </div>
+              <div class="bg-gray-50 p-3 rounded-lg border border-gray-100">
+                <p class="text-xs text-gray-500 mb-1">Kategori</p>
+                <p class="text-sm font-semibold text-gray-900">{{ selectedDetail.category_name || '-' }}</p>
+              </div>
+              <div class="bg-gray-50 p-3 rounded-lg border border-gray-100">
+                <p class="text-xs text-gray-500 mb-1">Poin</p>
+                <p class="text-sm font-bold text-primary">{{ selectedDetail.points_awarded || '-' }} pts</p>
+              </div>
+              <div class="bg-gray-50 p-3 rounded-lg border border-gray-100">
+                <p class="text-xs text-gray-500 mb-1">Tanggal Aktivitas</p>
+                <p class="text-sm font-semibold text-gray-900">{{ formatDate(selectedDetail.activity_date) }}</p>
+              </div>
+            </div>
+
+            <div v-if="selectedDetail.custom_reference?.Valid" class="bg-gray-50 p-3 rounded-lg border border-gray-100">
+              <p class="text-xs text-gray-500 mb-1">Nama Kegiatan/Aktivitas</p>
+              <p class="text-sm font-medium text-gray-900">{{ selectedDetail.custom_reference.String }}</p>
+            </div>
+
+            <div v-if="selectedDetail.nomor_ss?.Valid" class="bg-gray-50 p-3 rounded-lg border border-gray-100">
+              <p class="text-xs text-gray-500 mb-1">Nomor SS</p>
+              <p class="text-sm font-bold text-gray-900">{{ selectedDetail.nomor_ss.String }}</p>
+            </div>
+
+            <div v-if="selectedDetail.admin_notes?.Valid" class="bg-yellow-50 p-4 rounded-xl border border-yellow-200">
+              <p class="text-xs font-bold text-yellow-800 mb-1">Catatan Admin:</p>
+              <p class="text-sm text-yellow-700">{{ selectedDetail.admin_notes.String }}</p>
+            </div>
+
+            <!-- Evidence Section -->
+            <div v-if="selectedDetail.evidence && selectedDetail.evidence.length > 0">
+              <p class="text-sm font-bold text-gray-900 mb-3">Bukti Lampiran</p>
+              <div class="grid grid-cols-2 gap-3">
+                <a v-for="(ev, idx) in selectedDetail.evidence" :key="idx" :href="ev" target="_blank" class="block group relative rounded-lg overflow-hidden border border-gray-200 bg-gray-50">
+                  <div class="aspect-video w-full">
+                    <img :src="ev" class="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300" />
+                  </div>
+                  <div class="absolute inset-0 bg-black/40 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center">
+                    <svg class="w-8 h-8 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" /><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z" /></svg>
+                  </div>
+                </a>
+              </div>
+            </div>
+          </div>
+        </div>
+        
+        <div class="p-4 border-t border-gray-100 bg-gray-50 shrink-0 flex gap-3">
+          <button v-if="selectedDetail.status === 'REJECTED'" @click="goToRevision" class="flex-1 py-2.5 px-4 bg-primary text-white font-medium rounded-lg hover:bg-blue-700 transition-colors">
+            Revisi Pengajuan
+          </button>
+          <button @click="closeDetailModal" class="flex-1 py-2.5 px-4 bg-white border border-gray-300 text-gray-700 font-medium rounded-lg hover:bg-gray-50 transition-colors">
+            Tutup
+          </button>
+        </div>
+      </div>
+    </div>
+
   </div>
 </template>
 
 <script setup lang="ts">
-import { ref, onMounted } from 'vue';
+import { ref, onMounted, computed } from 'vue';
 import { useRouter } from 'vue-router';
 import { useAuthStore } from '../stores/auth';
 import apiClient from '../api/client';
 
+const authStore = useAuthStore();
 const router = useRouter();
 
 const auth = useAuthStore();
 const balance = ref(0); 
 const rank = ref('-');
-const submissions = ref<any[]>([]);
+const allSubmissions = ref<any[]>([]);
+const showAll = ref(false);
 const isLoading = ref(true);
+
+const displayedSubmissions = computed(() => {
+  if (showAll.value) return allSubmissions.value;
+  return allSubmissions.value.slice(0, 5);
+});
+
+const showDetailModal = ref(false);
+const selectedDetail = ref<any>(null);
+const isLoadingDetail = ref(false);
+
+const openDetail = async (sub: any) => {
+  try {
+    isLoadingDetail.value = true;
+    showDetailModal.value = true;
+    selectedDetail.value = null;
+    const res = await apiClient.get(`/submissions/${sub.id}`);
+    selectedDetail.value = res.data.data;
+  } catch (err) {
+    console.error("Gagal mengambil detail", err);
+    showDetailModal.value = false;
+  } finally {
+    isLoadingDetail.value = false;
+  }
+};
+
+const closeDetailModal = () => {
+  showDetailModal.value = false;
+  selectedDetail.value = null;
+};
+
+const goToRevision = () => {
+  if (selectedDetail.value) {
+    router.push(`/submission?revisi_id=${selectedDetail.value.id}`);
+  }
+};
 
 const getInitial = (name: string) => {
   return name.charAt(0).toUpperCase();
@@ -194,8 +325,8 @@ const fetchDashboardData = async () => {
 
     // Fetch recent submissions
     try {
-      const subRes = await apiClient.get('/submissions/me?limit=5');
-      submissions.value = subRes.data || [];
+      const subRes = await apiClient.get('/submissions/me');
+      allSubmissions.value = subRes.data.submissions || [];
     } catch (err) {
       console.warn("Could not fetch submissions", err);
     }

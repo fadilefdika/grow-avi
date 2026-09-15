@@ -39,7 +39,9 @@ CREATE TABLE activity_submissions (
     department VARCHAR(100) NOT NULL,
     activity_id BIGINT NOT NULL,
     activity_date DATE NOT NULL,
+    custom_activity_type VARCHAR(255) NULL,
     custom_reference VARCHAR(255) NULL,
+    nomor_ss VARCHAR(100) NULL,
     status VARCHAR(20) NOT NULL DEFAULT 'PENDING',
     points_awarded INT DEFAULT 0,
     admin_notes TEXT NULL,
@@ -102,7 +104,9 @@ CREATE TABLE refresh_tokens (
     expires_at DATETIME NOT NULL,
     revoked_at DATETIME NULL,
     created_at DATETIME DEFAULT GETDATE(),
-    user_agent VARCHAR(255) NULL
+    user_agent VARCHAR(255) NULL,
+    user_name VARCHAR(255) NULL,
+    department VARCHAR(100) NULL
 );
 
 CREATE INDEX IX_refresh_npk ON refresh_tokens(npk);

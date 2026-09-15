@@ -88,15 +88,21 @@
                 <div class="bg-gray-50 p-4 rounded-xl border border-gray-100 space-y-3">
                   <div>
                     <p class="text-xs text-gray-500">Kategori & Aktivitas</p>
-                    <p class="font-medium text-gray-900">{{ selectedDetail.category_name }} / {{ selectedDetail.activity_name }}</p>
+                    <p class="font-medium text-xs text-gray-900">
+                      {{ selectedDetail.category_name }}<span v-if="selectedDetail.category_name !== 'INNOVATION'"> - {{ selectedDetail.activity_name === 'Yang lain (Custom)' && selectedDetail.custom_activity_type?.Valid ? selectedDetail.custom_activity_type.String : selectedDetail.activity_name }}</span>
+                    </p>
                   </div>
                   <div>
                     <p class="text-xs text-gray-500">Tanggal Pelaksanaan</p>
-                    <p class="font-medium text-gray-900">{{ formatDate(selectedDetail.activity_date) }} WIB</p>
+                    <p class="font-medium text-xs text-gray-900">{{ formatDateOnly(selectedDetail.activity_date) }}</p>
                   </div>
-                  <div v-if="selectedDetail.custom_reference.Valid">
-                    <p class="text-xs text-gray-500">Keterangan / Nomor SS</p>
-                    <p class="font-medium text-gray-900">{{ selectedDetail.custom_reference.String }}</p>
+                  <div v-if="selectedDetail.custom_reference?.Valid">
+                    <p class="text-xs text-gray-500">Nama Kegiatan/Aktivitas</p>
+                    <p class="font-medium text-xs text-gray-900">{{ selectedDetail.custom_reference.String }}</p>
+                  </div>
+                  <div v-if="selectedDetail.nomor_ss?.Valid">
+                    <p class="text-xs text-gray-500">Nomor SS</p>
+                    <p class="font-medium text-xs text-gray-900">{{ selectedDetail.nomor_ss.String }}</p>
                   </div>
                 </div>
               </div>
@@ -115,7 +121,7 @@
 
               <div v-if="actionType === 'reject'">
                 <h4 class="text-xs font-bold text-red-500 uppercase tracking-wider mb-2">Alasan Penolakan</h4>
-                <textarea v-model="adminNotes" rows="3" class="w-full px-3 py-2 border border-red-300 rounded-lg shadow-sm focus:outline-none focus:ring-1 focus:ring-red-500 focus:border-red-500" placeholder="Berikan catatan agar karyawan bisa memperbaiki..."></textarea>
+                <textarea v-model="adminNotes" rows="3" class="w-full px-3 py-2 border border-red-300 rounded-lg shadow-sm focus:outline-none text-xs focus:ring-1 focus:ring-red-500 focus:border-red-500" placeholder="Berikan catatan agar karyawan bisa memperbaiki..."></textarea>
               </div>
 
             </div>
@@ -163,8 +169,33 @@
 
       </div>
     </div>
+
+    <!-- Zero Points Confirmation Dialog -->
+    <div v-if="showZeroPointsConfirm" class="fixed inset-0 z-[60] flex items-center justify-center p-4 bg-gray-900/70 backdrop-blur-sm">
+      <div class="bg-white rounded-2xl shadow-2xl w-full max-w-sm p-6">
+        <div class="flex items-center gap-3 mb-4">
+          <div class="w-10 h-10 rounded-full bg-yellow-100 flex items-center justify-center flex-shrink-0">
+            <svg class="w-5 h-5 text-yellow-600" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" />
+            </svg>
+          </div>
+          <div>
+            <h3 class="font-bold text-gray-900">Konfirmasi 0 Poin</h3>
+            <p class="text-sm text-gray-500">Anda akan memberikan 0 poin untuk pengajuan ini.</p>
+          </div>
+        </div>
+        <p class="text-sm text-gray-600 mb-6">Apakah Anda yakin ingin menyetujui pengajuan ini dengan <span class="font-bold text-red-600">0 poin</span>? Karyawan akan menerima poin tersebut.</p>
+        <div class="flex gap-3">
+          <button @click="showZeroPointsConfirm = false" class="flex-1 py-2 border border-gray-300 text-gray-700 rounded-lg hover:bg-gray-50 transition-colors font-medium text-sm">Batal, Ubah Poin</button>
+          <button @click="confirmApproveZero" class="flex-1 py-2 bg-yellow-500 text-white rounded-lg hover:bg-yellow-600 transition-colors font-medium text-sm">Ya, Tetap 0 Poin</button>
+        </div>
+      </div>
+    </div>
+
   </div>
 </template>
+
+
 
 <script setup lang="ts">
 import { ref, onMounted } from 'vue';
@@ -197,6 +228,7 @@ const adminNotes = ref('');
 const isProcessing = ref(false);
 const error = ref('');
 const toast = useToast();
+const showZeroPointsConfirm = ref(false);
 
 const fetchQueue = async () => {
   isLoading.value = true;
@@ -238,6 +270,21 @@ const closeDetail = () => {
 };
 
 const submitApprove = async () => {
+  if (!selectedDetail.value) return;
+  // Show zero-points confirmation if needed
+  if (Number(pointsOverride.value) === 0) {
+    showZeroPointsConfirm.value = true;
+    return;
+  }
+  await doApprove();
+};
+
+const confirmApproveZero = async () => {
+  showZeroPointsConfirm.value = false;
+  await doApprove();
+};
+
+const doApprove = async () => {
   if (!selectedDetail.value) return;
   isProcessing.value = true;
   error.value = '';
@@ -281,6 +328,15 @@ const formatDate = (dateString: string) => {
   if (!dateString) return '';
   const date = new Date(dateString);
   return date.toLocaleDateString('id-ID', { day: '2-digit', month: 'short', year: 'numeric', hour: '2-digit', minute: '2-digit' });
+};
+
+// Date-only formatter (for activity_date which has no meaningful time component)
+const formatDateOnly = (dateString: string) => {
+  if (!dateString) return '';
+  // Parse just the date portion to avoid timezone shifting
+  const [year, month, day] = dateString.split('T')[0].split('-').map(Number);
+  const date = new Date(year, month - 1, day);
+  return date.toLocaleDateString('id-ID', { day: '2-digit', month: 'short', year: 'numeric' });
 };
 
 onMounted(() => {

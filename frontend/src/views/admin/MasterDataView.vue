@@ -29,13 +29,7 @@
         </button>
       </div>
 
-      <!-- Error / Success Messages -->
-      <div v-if="error" class="mb-4 bg-red-50 border border-red-200 text-red-700 px-4 py-3 rounded-lg text-sm">
-        {{ error }}
-      </div>
-      <div v-if="successMsg" class="mb-4 bg-green-50 border border-green-200 text-green-700 px-4 py-3 rounded-lg text-sm">
-        {{ successMsg }}
-      </div>
+      <!-- Error / Success Messages Removed (Using Toasts instead) -->
 
       <!-- Categories Tab -->
       <div v-if="activeTab === 'categories'">
@@ -55,7 +49,7 @@
           </template>
           <template #actions="{ row }">
             <button @click="openCategoryModal(row)" class="text-blue-600 hover:text-blue-900 mr-3">Edit</button>
-            <button @click="deleteCategory(row.id)" class="text-red-600 hover:text-red-900">Hapus</button>
+            <button @click="confirmDeleteCategory(row)" class="text-red-600 hover:text-red-900">Hapus</button>
           </template>
         </DataTable>
       </div>
@@ -72,9 +66,15 @@
           empty-text="Tidak ada aktivitas."
         >
           <template #action>
-            <button @click="openActivityModal()" class="px-4 py-2 bg-primary text-white rounded-lg hover:bg-blue-800 transition-colors text-sm font-medium whitespace-nowrap">
-              + Tambah Aktivitas
-            </button>
+            <div class="flex items-center gap-2">
+              <select v-model="selectedCategoryId" @change="fetchActivities" class="border border-gray-200 rounded-lg px-3 py-1.5 text-sm focus:outline-none focus:ring-1 focus:ring-primary focus:border-primary text-gray-700 bg-gray-50">
+                <option value="">Semua Kategori</option>
+                <option v-for="cat in allCategories" :key="cat.id" :value="cat.id">{{ cat.name }}</option>
+              </select>
+              <button @click="openActivityModal()" class="px-4 py-1.5 bg-primary text-white rounded-lg hover:bg-blue-800 transition-colors text-sm font-medium whitespace-nowrap">
+                + Tambah Aktivitas
+              </button>
+            </div>
           </template>
           <template #cell-name="{ row }">
             <div class="font-medium text-gray-900">{{ row.name }}</div>
@@ -85,7 +85,7 @@
           </template>
           <template #actions="{ row }">
             <button @click="openActivityModal(row)" class="text-blue-600 hover:text-blue-900 mr-3">Edit</button>
-            <button @click="deleteActivity(row.id)" class="text-red-600 hover:text-red-900">Hapus</button>
+            <button @click="confirmDeleteActivity(row)" class="text-red-600 hover:text-red-900">Hapus</button>
           </template>
         </DataTable>
       </div>
@@ -100,7 +100,7 @@
         </div>
         <div class="p-6">
           <label class="block text-sm font-medium text-gray-700 mb-1">Nama Kategori</label>
-          <input type="text" v-model="categoryForm.name" class="w-full px-3 py-2 border border-gray-300 rounded-lg shadow-sm focus:outline-none focus:ring-1 focus:ring-primary focus:border-primary mb-4" />
+          <input type="text" v-model="categoryForm.name" class="w-full text-sm px-3 py-2 border border-gray-300 rounded-lg shadow-sm focus:outline-none focus:ring-1 focus:ring-primary focus:border-primary mb-4" />
           
           <div class="flex justify-end gap-3 mt-4">
             <button @click="showCategoryModal = false" class="px-4 py-2 border border-gray-300 text-gray-700 rounded-lg hover:bg-gray-100 transition-colors font-medium text-sm">Batal</button>
@@ -127,11 +127,11 @@
           </div>
           <div>
             <label class="block text-sm font-medium text-gray-700 mb-1">Nama Aktivitas</label>
-            <input type="text" v-model="activityForm.name" class="w-full px-3 py-2 border border-gray-300 rounded-lg shadow-sm focus:outline-none focus:ring-1 focus:ring-primary focus:border-primary" />
+            <input type="text" v-model="activityForm.name" class="w-full px-3 py-2 text-sm border border-gray-300 rounded-lg shadow-sm focus:outline-none focus:ring-1 focus:ring-primary focus:border-primary" />
           </div>
           <div>
             <label class="block text-sm font-medium text-gray-700 mb-1">Poin Default</label>
-            <input type="number" v-model="activityForm.default_points" class="w-full px-3 py-2 border border-gray-300 rounded-lg shadow-sm focus:outline-none focus:ring-1 focus:ring-primary focus:border-primary" />
+            <input type="number" v-model="activityForm.default_points" @wheel.prevent class="w-full px-3 py-2 border border-gray-300 rounded-lg shadow-sm focus:outline-none focus:ring-1 focus:ring-primary focus:border-primary [appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none" />
           </div>
           <div class="flex items-center">
             <input id="is_custom_input" type="checkbox" v-model="activityForm.is_custom_input" class="h-4 w-4 text-primary focus:ring-primary border-gray-300 rounded">
@@ -140,9 +140,31 @@
             </label>
           </div>
           
-          <div class="flex justify-end gap-3 mt-6">
+          <div class="flex justify-end gap-3 mt-4">
             <button @click="showActivityModal = false" class="px-4 py-2 border border-gray-300 text-gray-700 rounded-lg hover:bg-gray-100 transition-colors font-medium text-sm">Batal</button>
             <button @click="saveActivity" :disabled="isProcessing || !activityForm.name || !activityForm.category_id" class="px-4 py-2 bg-primary text-white rounded-lg hover:bg-blue-800 transition-colors font-medium text-sm disabled:opacity-50">Simpan</button>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Delete Confirmation Modal -->
+    <div v-if="showDeleteConfirm" class="fixed inset-0 z-50 flex items-center justify-center p-4 bg-gray-900/60 backdrop-blur-sm">
+      <div class="bg-white rounded-2xl shadow-xl w-full max-w-sm overflow-hidden">
+        <div class="p-6 text-center">
+          <div class="w-16 h-16 rounded-full bg-red-100 flex items-center justify-center mx-auto mb-4">
+            <svg class="w-8 h-8 text-red-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z"/>
+            </svg>
+          </div>
+          <h3 class="text-lg font-bold text-gray-900 mb-2">Konfirmasi Hapus</h3>
+          <p class="text-sm text-gray-500 mb-6">
+            Yakin ingin menghapus {{ itemToDelete?.type === 'category' ? 'kategori' : 'aktivitas' }} 
+            <span class="font-bold text-gray-700">"{{ itemToDelete?.name }}"</span>? Tindakan ini tidak dapat dibatalkan.
+          </p>
+          <div class="flex justify-center gap-3">
+            <button @click="closeDeleteConfirm" class="px-4 py-2 border border-gray-300 text-gray-700 rounded-lg hover:bg-gray-100 transition-colors font-medium text-sm">Batal</button>
+            <button @click="executeDelete" :disabled="isProcessing" class="px-4 py-2 bg-red-600 text-white rounded-lg hover:bg-red-700 transition-colors font-medium text-sm disabled:opacity-50">Ya, Hapus</button>
           </div>
         </div>
       </div>
@@ -154,12 +176,14 @@
 import { ref, computed, onMounted } from 'vue';
 import { useRouter } from 'vue-router';
 import { useAuthStore } from '../../stores/auth';
+import { useToast } from 'vue-toastification';
 import apiClient from '../../api/client';
 import AdminSidebar from '../../components/layout/AdminSidebar.vue';
 import DataTable from '../../components/ui/DataTable.vue';
 
 const router = useRouter();
 const authStore = useAuthStore();
+const toast = useToast();
 
 const activeTab = ref<'categories' | 'activities'>('categories');
 const allCategories = ref<any[]>([]); // For lookup & dropdown
@@ -168,8 +192,6 @@ const totalCategories = ref(0);
 const activities = ref<any[]>([]);
 const totalActivities = ref(0);
 
-const error = ref('');
-const successMsg = ref('');
 const isProcessing = ref(false);
 
 const catParams = ref({ page: 1, limit: 10, search: '', sort: '', order: 'asc' });
@@ -200,6 +222,47 @@ const showActivityModal = ref(false);
 const editingActivity = ref<any>(null);
 const activityForm = ref({ category_id: 0, name: '', default_points: 0, is_custom_input: false });
 
+const showDeleteConfirm = ref(false);
+const itemToDelete = ref<{ id: number, type: 'category' | 'activity', name: string } | null>(null);
+
+const confirmDeleteCategory = (row: any) => {
+  itemToDelete.value = { id: row.id, type: 'category', name: row.name };
+  showDeleteConfirm.value = true;
+};
+
+const confirmDeleteActivity = (row: any) => {
+  itemToDelete.value = { id: row.id, type: 'activity', name: row.name };
+  showDeleteConfirm.value = true;
+};
+
+const closeDeleteConfirm = () => {
+  showDeleteConfirm.value = false;
+  itemToDelete.value = null;
+};
+
+const executeDelete = async () => {
+  if (!itemToDelete.value) return;
+  isProcessing.value = true;
+  
+  try {
+    if (itemToDelete.value.type === 'category') {
+      await apiClient.delete(`/admin/categories/${itemToDelete.value.id}`);
+      showMessage('Kategori berhasil dihapus');
+      await fetchAllCategories();
+      fetchCategories();
+    } else {
+      await apiClient.delete(`/admin/activities/${itemToDelete.value.id}`);
+      showMessage('Aktivitas berhasil dihapus');
+      fetchActivities();
+    }
+    closeDeleteConfirm();
+  } catch (err: any) {
+    showMessage(err.response?.data?.error || 'Gagal menghapus data', true);
+  } finally {
+    isProcessing.value = false;
+  }
+};
+
 const fetchAllCategories = async () => {
   try {
     const res = await apiClient.get('/categories');
@@ -219,9 +282,11 @@ const fetchCategories = async () => {
   }
 };
 
+const selectedCategoryId = ref('');
+
 const fetchActivities = async () => {
   try {
-    const res = await apiClient.get('/activities', { params: actParams.value });
+    const res = await apiClient.get('/activities', { params: { ...actParams.value, category_id: selectedCategoryId.value } });
     activities.value = res.data.data || [];
     totalActivities.value = res.data.total || 0;
   } catch (err) {
@@ -252,16 +317,10 @@ const getCategoryName = (id: number) => {
 
 const showMessage = (msg: string, isError = false) => {
   if (isError) {
-    error.value = msg;
-    successMsg.value = '';
+    toast.error(msg);
   } else {
-    successMsg.value = msg;
-    error.value = '';
+    toast.success(msg);
   }
-  setTimeout(() => {
-    error.value = '';
-    successMsg.value = '';
-  }, 5000);
 };
 
 // --- Category Logic ---
@@ -296,17 +355,7 @@ const saveCategory = async () => {
   }
 };
 
-const deleteCategory = async (id: number) => {
-  if (!confirm('Yakin ingin menghapus kategori ini?')) return;
-  try {
-      await apiClient.delete(`/admin/categories/${id}`);
-      showMessage('Kategori berhasil dihapus');
-      await fetchAllCategories();
-      fetchCategories();
-    } catch (err: any) {
-    showMessage(err.response?.data?.error || 'Gagal menghapus kategori', true);
-  }
-};
+// deleteCategory replaced by executeDelete
 
 // --- Activity Logic ---
 const openActivityModal = (act?: any) => {
@@ -344,16 +393,7 @@ const saveActivity = async () => {
   }
 };
 
-const deleteActivity = async (id: number) => {
-  if (!confirm('Yakin ingin menghapus aktivitas ini?')) return;
-  try {
-    await apiClient.delete(`/admin/activities/${id}`);
-    showMessage('Aktivitas berhasil dihapus');
-    fetchActivities();
-  } catch (err: any) {
-    showMessage(err.response?.data?.error || 'Gagal menghapus aktivitas', true);
-  }
-};
+// deleteActivity replaced by executeDelete
 
 onMounted(() => {
   fetchData();

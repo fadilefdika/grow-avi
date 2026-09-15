@@ -33,9 +33,11 @@ func NewSubmissionHandler(db *sql.DB, uploadPath string) *SubmissionHandler {
 }
 
 type CreateSubmissionRequest struct {
-	ActivityID      int64  `form:"activity_id" binding:"required"`
-	ActivityDate    string `form:"activity_date" binding:"required"`
-	CustomReference string `form:"custom_reference"`
+	ActivityID         int64  `form:"activity_id" binding:"required"`
+	ActivityDate       string `form:"activity_date" binding:"required"`
+	CustomActivityType string `form:"custom_activity_type"`
+	CustomReference    string `form:"custom_reference"`
+	NomorSS            string `form:"nomor_ss"`
 }
 
 // generateGrowID generates a unique GROW ID: GR + YYMMDD + 4-digit sequence
@@ -204,15 +206,17 @@ func (h *SubmissionHandler) Create(c *gin.Context) {
 		return
 	}
 
+	customActType := sql.NullString{String: req.CustomActivityType, Valid: req.CustomActivityType != ""}
 	customRef := sql.NullString{String: req.CustomReference, Valid: req.CustomReference != ""}
+	nomorSS := sql.NullString{String: req.NomorSS, Valid: req.NomorSS != ""}
 
 	var submissionID int64
 	err = h.db.QueryRow(
 		`INSERT INTO activity_submissions
-		(grow_id, npk, user_name, department, activity_id, activity_date, custom_reference, status, points_awarded)
+		(grow_id, npk, user_name, department, activity_id, activity_date, custom_activity_type, custom_reference, nomor_ss, status, points_awarded)
 		OUTPUT INSERTED.id
-		VALUES (@p1, @p2, @p3, @p4, @p5, @p6, @p7, 'PENDING', 0)`,
-		growID, npk, userName, department, activityID, activityDate, customRef,
+		VALUES (@p1, @p2, @p3, @p4, @p5, @p6, @p7, @p8, @p9, 'PENDING', 0)`,
+		growID, npk, userName, department, activityID, activityDate, customActType, customRef, nomorSS,
 	).Scan(&submissionID)
 	if err != nil {
 		for _, sf := range savedFiles {
@@ -244,7 +248,7 @@ func (h *SubmissionHandler) MySubmissions(c *gin.Context) {
 	rows, err := h.db.Query(
 		`SELECT s.id, s.grow_id, a.name as activity_name, cat.name as category_name,
 		CONVERT(varchar, s.activity_date, 23) as activity_date,
-		s.custom_reference, s.status, COALESCE(s.points_awarded, 0), s.admin_notes, s.created_at
+		s.custom_activity_type, s.custom_reference, s.nomor_ss, s.status, COALESCE(s.points_awarded, 0), s.admin_notes, s.created_at
 		FROM activity_submissions s
 		JOIN activities a ON s.activity_id = a.id
 		JOIN categories cat ON a.category_id = cat.id
@@ -264,19 +268,21 @@ func (h *SubmissionHandler) MySubmissions(c *gin.Context) {
 		GrowID          string         `json:"grow_id"`
 		ActivityName    string         `json:"activity_name"`
 		CategoryName    string         `json:"category_name"`
-		ActivityDate    string         `json:"activity_date"`
-		CustomReference sql.NullString `json:"custom_reference"`
-		Status          string         `json:"status"`
-		PointsAwarded   int            `json:"points_awarded"`
-		AdminNotes      sql.NullString `json:"admin_notes"`
-		CreatedAt       time.Time      `json:"created_at"`
+		ActivityDate       string         `json:"activity_date"`
+		CustomActivityType sql.NullString `json:"custom_activity_type"`
+		CustomReference    sql.NullString `json:"custom_reference"`
+		NomorSS            sql.NullString `json:"nomor_ss"`
+		Status             string         `json:"status"`
+		PointsAwarded      int            `json:"points_awarded"`
+		AdminNotes         sql.NullString `json:"admin_notes"`
+		CreatedAt          time.Time      `json:"created_at"`
 	}
 
 	var items []Item
 	for rows.Next() {
 		var it Item
 		rows.Scan(&it.ID, &it.GrowID, &it.ActivityName, &it.CategoryName,
-			&it.ActivityDate, &it.CustomReference, &it.Status, &it.PointsAwarded,
+			&it.ActivityDate, &it.CustomActivityType, &it.CustomReference, &it.NomorSS, &it.Status, &it.PointsAwarded,
 			&it.AdminNotes, &it.CreatedAt)
 		items = append(items, it)
 	}
@@ -299,39 +305,43 @@ func (h *SubmissionHandler) GetSubmissionDetail(c *gin.Context) {
 	id := c.Param("id")
 
 	type Detail struct {
-		ID              int64          `json:"id"`
-		GrowID          string         `json:"grow_id"`
-		NPK             string         `json:"npk"`
-		UserName        string         `json:"user_name"`
-		Department      string         `json:"department"`
-		ActivityName    string         `json:"activity_name"`
-		CategoryName    string         `json:"category_name"`
-		DefaultPoints   int            `json:"default_points"`
-		ActivityDate    string         `json:"activity_date"`
-		CustomReference sql.NullString `json:"custom_reference"`
-		Status          string         `json:"status"`
-		PointsAwarded   int            `json:"points_awarded"`
-		AdminNotes      sql.NullString `json:"admin_notes"`
-		ReviewedByNPK   sql.NullString `json:"reviewed_by_npk"`
-		ReviewedAt      sql.NullTime   `json:"reviewed_at"`
-		CreatedAt       time.Time      `json:"created_at"`
-		Evidence        []string       `json:"evidence"`
+		ID                 int64          `json:"id"`
+		GrowID             string         `json:"grow_id"`
+		NPK                string         `json:"npk"`
+		UserName           string         `json:"user_name"`
+		Department         string         `json:"department"`
+		CategoryID         int64          `json:"category_id"`
+		CategoryName       string         `json:"category_name"`
+		ActivityID         int64          `json:"activity_id"`
+		ActivityName       string         `json:"activity_name"`
+		DefaultPoints      int            `json:"default_points"`
+		ActivityDate       string         `json:"activity_date"`
+		CustomActivityType sql.NullString `json:"custom_activity_type"`
+		CustomReference    sql.NullString `json:"custom_reference"`
+		NomorSS            sql.NullString `json:"nomor_ss"`
+		Status             string         `json:"status"`
+		PointsAwarded      int            `json:"points_awarded"`
+		AdminNotes         sql.NullString `json:"admin_notes"`
+		ReviewedByNPK      sql.NullString `json:"reviewed_by_npk"`
+		ReviewedAt         sql.NullTime   `json:"reviewed_at"`
+		CreatedAt          time.Time      `json:"created_at"`
+		Evidence           []string       `json:"evidence"`
 	}
 
 	var det Detail
 	err := h.db.QueryRow(
 		`SELECT s.id, s.grow_id, s.npk, s.user_name, s.department,
-		a.name, cat.name, COALESCE(a.default_points, 0),
+		cat.id as category_id, cat.name, a.id as activity_id, a.name, COALESCE(a.default_points, 0),
 		CONVERT(varchar, s.activity_date, 23),
-		s.custom_reference, s.status, COALESCE(s.points_awarded, 0), s.admin_notes,
+		s.custom_activity_type, s.custom_reference, s.nomor_ss, s.status, COALESCE(s.points_awarded, 0), s.admin_notes,
 		s.reviewed_by_npk, s.reviewed_at, s.created_at
 		FROM activity_submissions s
 		JOIN activities a ON s.activity_id = a.id
 		JOIN categories cat ON a.category_id = cat.id
 		WHERE s.id = @p1 AND s.deleted_at IS NULL`, id,
 	).Scan(&det.ID, &det.GrowID, &det.NPK, &det.UserName, &det.Department,
-		&det.ActivityName, &det.CategoryName, &det.DefaultPoints, &det.ActivityDate,
-		&det.CustomReference, &det.Status, &det.PointsAwarded, &det.AdminNotes,
+		&det.CategoryID, &det.CategoryName, &det.ActivityID, &det.ActivityName, &det.DefaultPoints, &det.ActivityDate,
+		&det.CustomActivityType, &det.CustomReference, &det.NomorSS, &det.Status, &det.PointsAwarded, &det.AdminNotes,
 		&det.ReviewedByNPK, &det.ReviewedAt, &det.CreatedAt)
 	if err == sql.ErrNoRows {
 		c.JSON(http.StatusNotFound, gin.H{"error": "pengajuan tidak ditemukan"})
@@ -359,7 +369,8 @@ func (h *SubmissionHandler) GetSubmissionDetail(c *gin.Context) {
 		for evRows.Next() {
 			var fp string
 			evRows.Scan(&fp)
-			det.Evidence = append(det.Evidence, "/"+fp)
+			fp = strings.TrimPrefix(fp, "/") // Ensure no leading slash first
+			det.Evidence = append(det.Evidence, "/"+fp) // Then prepend exactly one slash
 		}
 	}
 	if det.Evidence == nil {
@@ -387,7 +398,7 @@ func (h *SubmissionHandler) PendingQueue(c *gin.Context) {
 	query := `SELECT s.id, s.grow_id, s.npk, s.user_name, s.department,
 		a.name as activity_name, cat.name as category_name, COALESCE(a.default_points, 0),
 		CONVERT(varchar, s.activity_date, 23) as activity_date,
-		s.custom_reference, s.created_at
+		s.custom_activity_type, s.custom_reference, s.nomor_ss, s.created_at
 		FROM activity_submissions s
 		JOIN activities a ON s.activity_id = a.id
 		JOIN categories cat ON a.category_id = cat.id
@@ -443,12 +454,14 @@ func (h *SubmissionHandler) PendingQueue(c *gin.Context) {
 		NPK             string         `json:"npk"`
 		UserName        string         `json:"user_name"`
 		Department      string         `json:"department"`
-		ActivityName    string         `json:"activity_name"`
-		CategoryName    string         `json:"category_name"`
-		DefaultPoints   int            `json:"default_points"`
-		ActivityDate    string         `json:"activity_date"`
-		CustomReference sql.NullString `json:"custom_reference"`
-		CreatedAt       time.Time      `json:"created_at"`
+		ActivityName       string         `json:"activity_name"`
+		CategoryName       string         `json:"category_name"`
+		DefaultPoints      int            `json:"default_points"`
+		ActivityDate       string         `json:"activity_date"`
+		CustomActivityType sql.NullString `json:"custom_activity_type"`
+		CustomReference    sql.NullString `json:"custom_reference"`
+		NomorSS            sql.NullString `json:"nomor_ss"`
+		CreatedAt          time.Time      `json:"created_at"`
 	}
 
 	var items []PendingItem
@@ -456,7 +469,7 @@ func (h *SubmissionHandler) PendingQueue(c *gin.Context) {
 		var it PendingItem
 		rows.Scan(&it.ID, &it.GrowID, &it.NPK, &it.UserName, &it.Department,
 			&it.ActivityName, &it.CategoryName, &it.DefaultPoints, &it.ActivityDate,
-			&it.CustomReference, &it.CreatedAt)
+			&it.CustomActivityType, &it.CustomReference, &it.NomorSS, &it.CreatedAt)
 		items = append(items, it)
 	}
 	if items == nil {
@@ -576,17 +589,109 @@ func (h *SubmissionHandler) Resubmit(c *gin.Context) {
 		return
 	}
 
-	_, err = h.db.Exec(
-		`UPDATE activity_submissions
-		SET status = 'PENDING', admin_notes = NULL, reviewed_by_npk = NULL, reviewed_at = NULL, updated_at = GETDATE()
-		WHERE id = @p1`, id,
-	)
-	if err != nil {
-		slog.Error("gagal resubmit pengajuan", "error", err)
-		c.JSON(http.StatusInternalServerError, gin.H{"error": "gagal resubmit pengajuan"})
+	var req CreateSubmissionRequest
+	if err := c.ShouldBind(&req); err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
 		return
 	}
-	c.JSON(http.StatusOK, gin.H{"message": "pengajuan berhasil dikirim ulang"})
+
+	// Validate Activity Exists
+	var actName string
+	err = h.db.QueryRow("SELECT name FROM activities WHERE id = @p1 AND is_active = 1", req.ActivityID).Scan(&actName)
+	if err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "aktivitas tidak valid atau tidak aktif"})
+		return
+	}
+
+	// File Handling for new evidence
+	form, err := c.MultipartForm()
+	if err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "gagal membaca form data"})
+		return
+	}
+	files := form.File["evidence"]
+
+	// Update record
+	customActType := sql.NullString{String: req.CustomActivityType, Valid: req.CustomActivityType != ""}
+	customRef := sql.NullString{String: req.CustomReference, Valid: req.CustomReference != ""}
+	nomorSS := sql.NullString{String: req.NomorSS, Valid: req.NomorSS != ""}
+
+	tx, err := h.db.Begin()
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "gagal memulai transaksi"})
+		return
+	}
+	defer tx.Rollback()
+
+	_, err = tx.Exec(
+		`UPDATE activity_submissions
+		SET activity_id = @p1, activity_date = @p2, custom_activity_type = @p3, custom_reference = @p4, nomor_ss = @p5,
+		status = 'PENDING', admin_notes = NULL, reviewed_by_npk = NULL, reviewed_at = NULL, updated_at = GETDATE()
+		WHERE id = @p6`,
+		req.ActivityID, req.ActivityDate, customActType, customRef, nomorSS, id,
+	)
+	if err != nil {
+		slog.Error("gagal update resubmit pengajuan", "error", err)
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "gagal update pengajuan"})
+		return
+	}
+
+	// Always delete old files and insert new ones
+	var oldFiles []string
+	rows, _ := tx.Query("SELECT file_path FROM submission_evidence WHERE submission_id = @p1", id)
+	for rows.Next() {
+		var p string
+		rows.Scan(&p)
+		oldFiles = append(oldFiles, p)
+	}
+	rows.Close()
+
+	_, err = tx.Exec("DELETE FROM submission_evidence WHERE submission_id = @p1", id)
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "gagal menghapus bukti lama"})
+		return
+	}
+
+	for _, f := range oldFiles {
+		f = strings.TrimPrefix(f, "/")
+		os.Remove("./" + f) // Assuming file_path starts with uploads
+	}
+
+	// Save new files
+	for i, file := range files {
+		ext := filepath.Ext(file.Filename)
+		filename := fmt.Sprintf("%s_%d_%d%s", npk, time.Now().UnixNano(), i, ext)
+		uploadDir := fmt.Sprintf("./uploads/evidence/%s", time.Now().Format("2006/01/02"))
+		if err := os.MkdirAll(uploadDir, 0755); err != nil {
+			continue
+		}
+
+		filePath := filepath.Join(uploadDir, filename)
+		if err := c.SaveUploadedFile(file, filePath); err != nil {
+			continue
+		}
+
+		// Ensure consistent path format without leading slash
+		relPath := "uploads/evidence/" + time.Now().Format("2006/01/02") + "/" + filename
+		fileSizeKB := int(file.Size / 1024)
+
+		_, err = tx.Exec(
+			`INSERT INTO submission_evidence (submission_id, file_path, original_filename, file_size_kb, sort_order)
+			VALUES (@p1, @p2, @p3, @p4, @p5)`,
+			id, relPath, file.Filename, fileSizeKB, i,
+		)
+		if err != nil {
+			slog.Error("gagal insert evidence resubmit", "error", err)
+		}
+	}
+
+	err = tx.Commit()
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "gagal commit transaksi"})
+		return
+	}
+
+	c.JSON(http.StatusOK, gin.H{"message": "pengajuan berhasil direvisi dan dikirim ulang"})
 }
 
 // GET /api/admin/activity-log
@@ -630,24 +735,28 @@ func (h *SubmissionHandler) ActivityLog(c *gin.Context) {
 	cteQuery := `
 		WITH ActivityHistory AS (
 			SELECT 
+				id,
 				grow_id, 
 				npk, 
 				user_name, 
 				status as activity_type, 
 				COALESCE(points_awarded, 0) as points, 
-				created_at as activity_date
+				created_at as activity_date,
+				'submission' as source_table
 			FROM activity_submissions
 			WHERE status IN ('APPROVED', 'REJECTED') AND deleted_at IS NULL
 
 			UNION ALL
 
 			SELECT 
+				id,
 				'-' as grow_id, 
 				rr.npk, 
 				ISNULL((SELECT TOP 1 user_name FROM activity_submissions WHERE npk = rr.npk ORDER BY id DESC), rr.npk) as user_name,
 				'REDEEM' as activity_type, 
 				rr.points_spent as points, 
-				rr.created_at as activity_date
+				rr.created_at as activity_date,
+				'redemption' as source_table
 			FROM reward_redemptions rr
 			WHERE rr.deleted_at IS NULL
 		)
@@ -658,7 +767,7 @@ func (h *SubmissionHandler) ActivityLog(c *gin.Context) {
 	paramIdx := 1
 
 	if search != "" {
-		conditions = append(conditions, "grow_id LIKE @p"+strconv.Itoa(paramIdx))
+		conditions = append(conditions, "(grow_id LIKE @p"+strconv.Itoa(paramIdx)+" OR npk LIKE @p"+strconv.Itoa(paramIdx)+" OR user_name LIKE @p"+strconv.Itoa(paramIdx)+")")
 		args = append(args, "%"+search+"%")
 		paramIdx++
 	}
@@ -694,51 +803,64 @@ func (h *SubmissionHandler) ActivityLog(c *gin.Context) {
 	}
 
 	// 2. Get paginated data
-	dataQuery := cteQuery + ` SELECT grow_id, npk, user_name, activity_type, points, activity_date FROM ActivityHistory ` + whereClause
+	query := `
+		SELECT 
+			id, grow_id, npk, user_name, activity_type, points, activity_date, source_table
+		FROM ActivityHistory
+		` + whereClause + `
+		ORDER BY ` + dbSort + ` ` + order
 
-	// Add sorting and pagination
-	dataQuery += fmt.Sprintf(" ORDER BY %s %s", dbSort, order)
 	// Tie breaker for consistent pagination
 	if dbSort != "activity_date" {
-		dataQuery += ", activity_date DESC"
+		query += ", activity_date DESC"
 	}
 
-	dataQuery += fmt.Sprintf(" OFFSET @p%d ROWS FETCH NEXT @p%d ROWS ONLY", paramIdx, paramIdx+1)
+	query += fmt.Sprintf(" OFFSET @p%d ROWS FETCH NEXT @p%d ROWS ONLY", paramIdx, paramIdx+1)
 	args = append(args, offset, limit)
 
-	rows, err := h.db.Query(dataQuery, args...)
+	rows, err := h.db.Query(cteQuery+query, args...)
 	if err != nil {
-		slog.Error("gagal mengambil data activity log", "error", err)
-		c.JSON(http.StatusInternalServerError, gin.H{"error": "gagal mengambil data activity log"})
+		slog.Error("gagal query activity log", "error", err)
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "Gagal mengambil activity log"})
 		return
 	}
 	defer rows.Close()
 
-	type LogItem struct {
+	type ActivityLogItem struct {
+		ID           int64     `json:"id"`
 		GrowID       string    `json:"grow_id"`
 		NPK          string    `json:"npk"`
 		UserName     string    `json:"user_name"`
 		ActivityType string    `json:"activity_type"`
 		Points       int       `json:"points"`
 		ActivityDate time.Time `json:"activity_date"`
+		SourceTable  string    `json:"source_table"`
 	}
 
-	var items []LogItem
+	var data []ActivityLogItem
 	for rows.Next() {
-		var it LogItem
-		err := rows.Scan(&it.GrowID, &it.NPK, &it.UserName, &it.ActivityType, &it.Points, &it.ActivityDate)
-		if err != nil {
-			slog.Error("gagal scan row activity log", "error", err)
+		var item ActivityLogItem
+		if err := rows.Scan(
+			&item.ID,
+			&item.GrowID, 
+			&item.NPK, 
+			&item.UserName, 
+			&item.ActivityType, 
+			&item.Points, 
+			&item.ActivityDate,
+			&item.SourceTable,
+		); err != nil {
+			slog.Error("error scan activity log", "error", err)
 			continue
 		}
-		items = append(items, it)
+		data = append(data, item)
 	}
-	if items == nil {
-		items = []LogItem{}
+	if data == nil {
+		data = []ActivityLogItem{}
 	}
 
 	c.JSON(http.StatusOK, gin.H{
-		"data":  items,
+		"data":  data,
 		"total": total,
 	})
 }
