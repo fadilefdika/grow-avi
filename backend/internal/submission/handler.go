@@ -245,17 +245,67 @@ func (h *SubmissionHandler) Create(c *gin.Context) {
 func (h *SubmissionHandler) MySubmissions(c *gin.Context) {
 	npk := c.GetString("npk")
 
-	rows, err := h.db.Query(
-		`SELECT s.id, s.grow_id, a.name as activity_name, cat.name as category_name,
+	pageStr := c.DefaultQuery("page", "1")
+	limitStr := c.DefaultQuery("limit", "10")
+	search := c.Query("search")
+	categoryIDStr := c.Query("category_id")
+
+	page, err := strconv.Atoi(pageStr)
+	if err != nil || page < 1 {
+		page = 1
+	}
+	limit, err := strconv.Atoi(limitStr)
+	if err != nil || limit < 1 {
+		limit = 10
+	}
+	if limit > 100 {
+		limit = 100
+	}
+	offset := (page - 1) * limit
+
+	whereClause := "WHERE s.npk = @p1 AND s.deleted_at IS NULL"
+	args := []interface{}{npk}
+	paramIndex := 2
+
+	if search != "" {
+		whereClause += fmt.Sprintf(" AND s.grow_id LIKE @p%d", paramIndex)
+		args = append(args, "%"+search+"%")
+		paramIndex++
+	}
+
+	if categoryIDStr != "" {
+		if catID, err := strconv.Atoi(categoryIDStr); err == nil {
+			whereClause += fmt.Sprintf(" AND a.category_id = @p%d", paramIndex)
+			args = append(args, catID)
+			paramIndex++
+		}
+	}
+
+	// Count total
+	var total int64
+	countQuery := "SELECT COUNT(*) FROM activity_submissions s JOIN activities a ON s.activity_id = a.id " + whereClause
+	err = h.db.QueryRow(countQuery, args...).Scan(&total)
+	if err != nil {
+		slog.Error("gagal menghitung total pengajuan", "error", err)
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "gagal menghitung total pengajuan"})
+		return
+	}
+
+	query := fmt.Sprintf(`
+		SELECT s.id, s.grow_id, a.name as activity_name, cat.name as category_name,
 		CONVERT(varchar, s.activity_date, 23) as activity_date,
 		s.custom_activity_type, s.custom_reference, s.nomor_ss, s.status, COALESCE(s.points_awarded, 0), s.admin_notes, s.created_at
 		FROM activity_submissions s
 		JOIN activities a ON s.activity_id = a.id
 		JOIN categories cat ON a.category_id = cat.id
-		WHERE s.npk = @p1 AND s.deleted_at IS NULL
-		ORDER BY s.created_at DESC`,
-		npk,
-	)
+		%s
+		ORDER BY s.created_at DESC
+		OFFSET @p%d ROWS FETCH NEXT @p%d ROWS ONLY
+	`, whereClause, paramIndex, paramIndex+1)
+
+	args = append(args, offset, limit)
+
+	rows, err := h.db.Query(query, args...)
 	if err != nil {
 		slog.Error("gagal mengambil data pengajuan", "error", err)
 		c.JSON(http.StatusInternalServerError, gin.H{"error": "gagal mengambil data pengajuan"})
@@ -264,10 +314,10 @@ func (h *SubmissionHandler) MySubmissions(c *gin.Context) {
 	defer rows.Close()
 
 	type Item struct {
-		ID              int64          `json:"id"`
-		GrowID          string         `json:"grow_id"`
-		ActivityName    string         `json:"activity_name"`
-		CategoryName    string         `json:"category_name"`
+		ID                 int64          `json:"id"`
+		GrowID             string         `json:"grow_id"`
+		ActivityName       string         `json:"activity_name"`
+		CategoryName       string         `json:"category_name"`
 		ActivityDate       string         `json:"activity_date"`
 		CustomActivityType sql.NullString `json:"custom_activity_type"`
 		CustomReference    sql.NullString `json:"custom_reference"`
@@ -294,9 +344,20 @@ func (h *SubmissionHandler) MySubmissions(c *gin.Context) {
 	h.db.QueryRow("SELECT ISNULL(SUM(points_awarded), 0) FROM activity_submissions WHERE npk = @p1 AND status = 'APPROVED' AND deleted_at IS NULL", npk).Scan(&totalEarned)
 	h.db.QueryRow("SELECT ISNULL(SUM(points_spent), 0) FROM reward_redemptions WHERE npk = @p1 AND deleted_at IS NULL AND status != 'CANCELLED'", npk).Scan(&totalSpent)
 
+	totalPages := (int(total) + limit - 1) / limit
+	if totalPages == 0 {
+		totalPages = 1
+	}
+
 	c.JSON(http.StatusOK, gin.H{
 		"balance":     totalEarned - totalSpent,
 		"submissions": items,
+		"meta": gin.H{
+			"total":       total,
+			"page":        page,
+			"limit":       limit,
+			"total_pages": totalPages,
+		},
 	})
 }
 

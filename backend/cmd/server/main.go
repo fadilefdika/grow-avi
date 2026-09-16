@@ -68,9 +68,13 @@ func main() {
 	}
 
 	// ────────────────────────────────
-	// Protected routes (JWT required)
+	// Protected routes (JWT required + Rate Limiting)
 	// ────────────────────────────────
-	api := r.Group("/api", auth.JWTMiddleware())
+	generalRate := limiter.Rate{Period: 1 * time.Minute, Limit: 120}
+	generalStore := memory.NewStore()
+	generalLimiterInstance := limiter.New(generalStore, generalRate)
+
+	api := r.Group("/api", auth.JWTMiddleware(), mgin.NewMiddleware(generalLimiterInstance))
 	{
 		// Master data (public to all authenticated users)
 		api.GET("/categories", masterHandler.GetCategories)

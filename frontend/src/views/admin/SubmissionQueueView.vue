@@ -43,7 +43,7 @@
           <template #cell-activity_name="{ row }">
             <div class="font-medium text-gray-900">{{ row.activity_name }}</div>
             <div class="text-xs text-gray-500">{{ row.category_name }}</div>
-            <div v-if="row.custom_reference?.Valid" class="text-xs text-gray-500 italic">Ref: {{ row.custom_reference.String }}</div>
+            <div v-if="row.custom_reference?.Valid" class="text-xs text-gray-500 italic truncate max-w-[250px]">{{ row.custom_reference.String }}</div>
           </template>
           <template #cell-default_points="{ value }">
             <span class="px-2 py-1 bg-blue-50 text-blue-700 rounded-md font-bold text-xs">{{ value }} pts</span>

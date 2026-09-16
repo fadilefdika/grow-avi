@@ -87,8 +87,8 @@
       <div class="bg-white rounded-2xl p-5 shadow-sm border border-gray-100">
         <div class="flex justify-between items-center mb-4">
           <h3 class="font-bold text-gray-800">Riwayat Pengajuan</h3>
-          <button @click="showAll = !showAll" v-if="allSubmissions.length > 5" class="text-xs text-primary font-medium hover:underline">
-            {{ showAll ? 'Tampilkan Lebih Sedikit' : 'Lihat Semua' }}
+          <button @click="$router.push('/history')" v-if="allSubmissions.length > 5" class="text-xs text-primary font-medium hover:underline">
+            Lihat Semua
           </button>
         </div>
 
@@ -239,11 +239,10 @@ const auth = useAuthStore();
 const balance = ref(0); 
 const rank = ref('-');
 const allSubmissions = ref<any[]>([]);
-const showAll = ref(false);
+const showAll = ref(false); // No longer used but kept to avoid undefined errors if referenced elsewhere
 const isLoading = ref(true);
 
 const displayedSubmissions = computed(() => {
-  if (showAll.value) return allSubmissions.value;
   return allSubmissions.value.slice(0, 5);
 });
 

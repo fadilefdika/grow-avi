@@ -7,6 +7,21 @@
         <p v-if="subtitle" class="text-xs text-gray-500 mt-0.5">{{ subtitle }}</p>
       </div>
       <div class="flex items-center gap-2">
+        <!-- Page size selector at top -->
+        <div class="relative">
+          <select
+            v-model="pageSize"
+            class="text-sm border border-gray-200 rounded-lg pl-3 pr-8 py-1.5 text-gray-600 focus:outline-none focus:ring-1 focus:ring-blue-500 focus:border-blue-500 bg-white cursor-pointer appearance-none transition-all hover:border-gray-300 shadow-sm"
+          >
+            <option :value="5">5 / hal</option>
+            <option :value="10">10 / hal</option>
+            <option :value="25">25 / hal</option>
+            <option :value="50">50 / hal</option>
+          </select>
+          <svg class="absolute right-2.5 top-2.5 h-4 w-4 text-gray-400 pointer-events-none" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7" />
+          </svg>
+        </div>
         <!-- Search -->
         <div class="relative">
           <input
@@ -139,16 +154,6 @@
         >
           <svg class="h-3.5 w-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 5l7 7-7 7M5 5l7 7-7 7"/></svg>
         </button>
-        <!-- Page size selector -->
-        <select
-          v-model="pageSize"
-          class="ml-2 text-xs border border-gray-200 rounded px-1.5 py-1 text-gray-600 focus:outline-none focus:ring-1 focus:ring-blue-500"
-        >
-          <option :value="5">5 / hal</option>
-          <option :value="10">10 / hal</option>
-          <option :value="25">25 / hal</option>
-          <option :value="50">50 / hal</option>
-        </select>
       </div>
     </div>
   </div>

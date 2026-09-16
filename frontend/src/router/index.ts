@@ -25,6 +25,12 @@ const router = createRouter({
       meta: { requiresAuth: true, role: 'employee' }
     },
     {
+      path: '/history',
+      name: 'history',
+      component: () => import('../views/employee/EmployeeHistoryView.vue'),
+      meta: { requiresAuth: true, role: 'employee' }
+    },
+    {
       path: '/admin/dashboard',
       name: 'admin-dashboard',
       component: () => import('../views/admin/AdminDashboardView.vue'),
