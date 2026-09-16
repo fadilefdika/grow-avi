@@ -20,7 +20,7 @@ CREATE TABLE activities (
     id BIGINT IDENTITY(1,1) PRIMARY KEY,
     category_id BIGINT NOT NULL,
     name VARCHAR(255) NOT NULL,
-    default_points INT NOT NULL DEFAULT 0,
+    default_points INT DEFAULT 0,
     is_custom_input BIT DEFAULT 0,
     is_active BIT DEFAULT 1,
     created_at DATETIME DEFAULT GETDATE(),
@@ -46,9 +46,7 @@ CREATE TABLE activity_submissions (
     department VARCHAR(100) NOT NULL,
     activity_id BIGINT NOT NULL,
     activity_date DATE NOT NULL,
-    custom_activity_type VARCHAR(255) NULL,
     custom_reference VARCHAR(255) NULL,
-    nomor_ss VARCHAR(100) NULL,
     status VARCHAR(20) NOT NULL DEFAULT 'PENDING',
     points_awarded INT DEFAULT 0,
     admin_notes TEXT NULL,
@@ -57,6 +55,8 @@ CREATE TABLE activity_submissions (
     created_at DATETIME DEFAULT GETDATE(),
     updated_at DATETIME DEFAULT GETDATE(),
     deleted_at DATETIME NULL,
+    nomor_ss VARCHAR(100) NULL,
+    custom_activity_type VARCHAR(255) NULL,
     CONSTRAINT FK_submissions_activities FOREIGN KEY (activity_id) REFERENCES activities(id),
     CONSTRAINT UQ_submissions_grow_id UNIQUE (grow_id)
 );
