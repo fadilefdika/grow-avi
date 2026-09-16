@@ -1,6 +1,7 @@
 package auth
 
 import (
+	"database/sql"
 	"encoding/json"
 	"errors"
 	"fmt"
@@ -17,10 +18,14 @@ type DakarProfile struct {
 	Department string
 }
 
+type aworkUser struct {
+	NPK        string `json:"npk"`
+	Name       string `json:"fullname"`
+	Department string `json:"department"`
+}
+
 // ValidateCredentials checks credentials.
-// For Awork, we fetch the users list and verify if the NPK exists.
-// We expect password to match the default AWORK_DEFAULT_PASSWORD.
-func ValidateCredentials(npk, password string) (bool, *DakarProfile, error) {
+func ValidateCredentials(db *sql.DB, npk, password string) (bool, *DakarProfile, error) {
 	if npk == "" || password == "" {
 		return false, nil, errors.New("empty credentials")
 	}
@@ -43,6 +48,25 @@ func ValidateCredentials(npk, password string) (bool, *DakarProfile, error) {
 		return false, nil, nil // Invalid password
 	}
 
+	// 1. Cek di tabel users lokal (Fast Path)
+	var fullname, department string
+	err := db.QueryRow("SELECT fullname, department FROM users WHERE npk = @p1", npk).Scan(&fullname, &department)
+	if err == nil {
+		fmt.Printf("[DEBUG DAKAR] NPK %s ditemukan di database lokal\n", npk)
+		return true, &DakarProfile{
+			NPK:        npk,
+			UserName:   fullname,
+			Department: department,
+		}, nil
+	}
+
+	if err != sql.ErrNoRows {
+		// Error database selain tidak ditemukan
+		return false, nil, fmt.Errorf("database error: %v", err)
+	}
+
+	// 2. JIT Fallback (Jika tidak ada di DB, tembak API Awork sekali ini saja)
+	fmt.Printf("[DEBUG DAKAR] NPK %s tidak ada di DB lokal, mencoba JIT Fallback ke API Awork...\n", npk)
 	apiURL := os.Getenv("AWORK_API_URL")
 	apiKey := os.Getenv("AWORK_API_KEY")
 
@@ -80,12 +104,6 @@ func ValidateCredentials(npk, password string) (bool, *DakarProfile, error) {
 		return false, nil, err
 	}
 
-	// Assuming the response is {"data": [ { "npk": "...", "fullname": "...", "department": "..." } ]}
-	type aworkUser struct {
-		NPK        string `json:"npk"`
-		Name       string `json:"fullname"`
-		Department string `json:"department"`
-	}
 	var apiResp struct {
 		Data []aworkUser `json:"data"`
 	}
@@ -94,17 +112,32 @@ func ValidateCredentials(npk, password string) (bool, *DakarProfile, error) {
 		return false, nil, err
 	}
 
-	for _, user := range apiResp.Data {
-		if user.NPK == npk {
-			fmt.Printf("[DEBUG DAKAR] Berhasil menemukan NPK: %s, Name: '%s', Dept: '%s'\n", user.NPK, user.Name, user.Department)
+	// Cari NPK dari response Awork
+	for _, u := range apiResp.Data {
+		if u.NPK == npk {
+			// Masukkan ke DB lokal (Upsert) agar next login langsung kena Fast Path
+			_, errIns := db.Exec(`
+				MERGE INTO users AS target
+				USING (SELECT @p1 AS npk, @p2 AS fullname, @p3 AS department) AS source
+				ON target.npk = source.npk
+				WHEN NOT MATCHED THEN
+					INSERT (npk, fullname, department) VALUES (source.npk, source.fullname, source.department);
+			`, u.NPK, u.Name, u.Department)
+
+			if errIns != nil {
+				fmt.Printf("[DEBUG DAKAR] Gagal insert JIT user %s ke lokal: %v\n", npk, errIns)
+			} else {
+				fmt.Printf("[DEBUG DAKAR] Berhasil JIT sync untuk user %s\n", npk)
+			}
+
 			return true, &DakarProfile{
-				NPK:        user.NPK,
-				UserName:   user.Name,
-				Department: user.Department,
+				NPK:        u.NPK,
+				UserName:   u.Name,
+				Department: u.Department,
 			}, nil
 		}
 	}
 
-	fmt.Printf("[DEBUG DAKAR] NPK %s tidak ditemukan dalam daftar %d karyawan dari Awork\n", npk, len(apiResp.Data))
+	fmt.Printf("[DEBUG DAKAR] JIT Fallback gagal, NPK %s memang tidak ada di Awork\n", npk)
 	return false, nil, nil
 }

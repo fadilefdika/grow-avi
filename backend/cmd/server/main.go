@@ -13,6 +13,7 @@ import (
 	"grow-point/internal/master"
 	"grow-point/internal/reward"
 	"grow-point/internal/submission"
+	"grow-point/internal/sync"
 
 	"github.com/gin-gonic/gin"
 	"github.com/joho/godotenv"
@@ -30,6 +31,9 @@ func main() {
 	// Init DB
 	db.InitDB()
 	sqlDB := db.GetDB()
+
+	// Mulai cron job sinkronisasi Awork di background
+	sync.StartDailyCron(sqlDB)
 
 	// Init handlers
 	authHandler := auth.NewAuthHandler(sqlDB)

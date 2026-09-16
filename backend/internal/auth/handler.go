@@ -85,7 +85,7 @@ func (h *AuthHandler) Login(c *gin.Context) {
 		// 2. Asumsikan Employee (karena angka murni, panggil Dakar API)
 		var dakarValid bool
 		var dakarErr error
-		dakarValid, profile, dakarErr = ValidateCredentials(req.NPK, req.Password)
+		dakarValid, profile, dakarErr = ValidateCredentials(h.db, req.NPK, req.Password)
 
 		// Log attempt
 		h.logAttempt(req.NPK, c.ClientIP(), dakarValid)

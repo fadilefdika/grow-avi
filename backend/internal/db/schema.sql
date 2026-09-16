@@ -1,5 +1,12 @@
 -- GROW Point System DDL (SQL Server)
 
+CREATE TABLE users (
+    npk VARCHAR(50) PRIMARY KEY,
+    fullname VARCHAR(255) NOT NULL,
+    department VARCHAR(255) NOT NULL,
+    created_at DATETIME DEFAULT GETDATE(),
+    updated_at DATETIME DEFAULT GETDATE()
+);
 CREATE TABLE categories (
     id BIGINT IDENTITY(1,1) PRIMARY KEY,
     name VARCHAR(100) NOT NULL,
