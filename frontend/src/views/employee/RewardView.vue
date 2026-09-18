@@ -22,19 +22,7 @@
     <!-- Main Content (Overlapping Header) -->
     <div class="px-5 -mt-16 relative z-20 space-y-5">
       
-      <!-- Error / Success Messages -->
-      <div v-if="error" class="bg-red-50 border border-red-200 text-red-700 px-4 py-3 rounded-lg text-sm relative">
-        <span class="block sm:inline">{{ error }}</span>
-        <button @click="error = ''" class="absolute top-0 right-0 px-3 py-3">
-           <svg class="h-4 w-4 text-red-500" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" /></svg>
-        </button>
-      </div>
-      <div v-if="successMsg" class="bg-green-50 border border-green-200 text-green-700 px-4 py-3 rounded-lg text-sm relative">
-        <span class="block sm:inline">{{ successMsg }}</span>
-        <button @click="successMsg = ''" class="absolute top-0 right-0 px-3 py-3">
-           <svg class="h-4 w-4 text-green-500" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" /></svg>
-        </button>
-      </div>
+
 
       <!-- Loading State -->
       <div v-if="isLoading" class="flex justify-center py-12">
@@ -124,14 +112,14 @@
 <script setup lang="ts">
 import { ref, onMounted } from 'vue';
 import apiClient from '../../api/client';
+import { useToast } from 'vue-toastification';
 
 const rewards = ref<any[]>([]);
 const balance = ref(0);
 const isLoading = ref(true);
 const isRedeeming = ref(false);
-const error = ref('');
-const successMsg = ref('');
 const selectedReward = ref<any>(null);
+const toast = useToast();
 
 const fetchData = async () => {
   isLoading.value = true;
@@ -144,7 +132,7 @@ const fetchData = async () => {
     balance.value = balRes.data.balance || 0;
     rewards.value = rwRes.data.data || [];
   } catch (err) {
-    error.value = 'Gagal memuat data katalog hadiah.';
+    toast.error('Gagal memuat data katalog hadiah.');
     console.error(err);
   } finally {
     isLoading.value = false;
@@ -152,8 +140,6 @@ const fetchData = async () => {
 };
 
 const confirmRedeem = (reward: any) => {
-  error.value = '';
-  successMsg.value = '';
   selectedReward.value = reward;
 };
 
@@ -161,11 +147,10 @@ const executeRedeem = async () => {
   if (!selectedReward.value) return;
   
   isRedeeming.value = true;
-  error.value = '';
   
   try {
     const res = await apiClient.post(`/rewards/redeem/${selectedReward.value.id}`);
-    successMsg.value = res.data.message || `Berhasil menukar ${selectedReward.value.title}!`;
+    toast.success(res.data.message || `Berhasil menukar ${selectedReward.value.title}!`);
     balance.value = res.data.remaining_balance;
     
     // Refresh catalog to update stock
@@ -174,9 +159,9 @@ const executeRedeem = async () => {
     
   } catch (err: any) {
     if (err.response && err.response.data && err.response.data.error) {
-      error.value = err.response.data.error;
+      toast.error(err.response.data.error);
     } else {
-      error.value = 'Gagal melakukan penukaran. Coba lagi.';
+      toast.error('Gagal melakukan penukaran. Coba lagi.');
     }
   } finally {
     isRedeeming.value = false;

@@ -33,10 +33,7 @@
       </div>
       
       <form class="mt-8 space-y-6" @submit.prevent="handleLogin">
-        <!-- Error Alert -->
-        <div v-if="error" class="bg-red-50 border border-red-200 text-red-700 px-4 py-3 rounded-lg relative text-sm" role="alert">
-          <span class="block sm:inline">{{ error }}</span>
-        </div>
+
 
         <div class="space-y-4">
           <!-- Username / NPK Field -->
@@ -54,11 +51,13 @@
                 :id="loginType === 'employee' ? 'npk' : 'username'" 
                 :name="loginType === 'employee' ? 'npk' : 'username'" 
                 :type="loginType === 'employee' ? 'number' : 'text'"
+                min="0"
+                @wheel.prevent
                 :inputmode="loginType === 'employee' ? 'numeric' : 'text'"
                 :pattern="loginType === 'employee' ? '[0-9]*' : undefined"
                 required 
                 v-model="usernameInput" 
-                class="appearance-none rounded-lg relative block w-full px-3 py-3 pl-10 border border-gray-300 placeholder-gray-500 text-gray-900 focus:outline-none focus:ring-2 focus:ring-primary focus:border-primary focus:z-10 sm:text-sm transition-colors" 
+                class="appearance-none rounded-lg relative block w-full px-3 py-3 pl-10 border border-gray-300 placeholder-gray-500 text-gray-900 focus:outline-none focus:ring-2 focus:ring-primary focus:border-primary focus:z-10 sm:text-sm transition-colors [appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none" 
                 :placeholder="loginType === 'employee' ? 'Masukkan NPK (angka)' : 'Masukkan Username'" 
               />
             </div>
@@ -129,9 +128,11 @@ import { ref, watch } from 'vue';
 import { useRouter } from 'vue-router';
 import { useAuthStore } from '../stores/auth';
 import apiClient from '../api/client';
+import { useToast } from 'vue-toastification';
 
 const router = useRouter();
 const authStore = useAuthStore();
+const toast = useToast();
 
 const loginType = ref<'employee' | 'admin'>('employee');
 const usernameInput = ref('');
@@ -141,13 +142,10 @@ const passwordInput = ref('');
 watch(loginType, () => {
   usernameInput.value = '';
   passwordInput.value = '';
-  error.value = '';
 });
 const showPassword = ref(false);
 const isLoading = ref(false);
-const error = ref('');
 const countdown = ref(0);
-let timerInterval: ReturnType<typeof setInterval> | null = null;
 
 const formatCountdown = (seconds: number) => {
   const m = Math.floor(seconds / 60);
@@ -157,7 +155,6 @@ const formatCountdown = (seconds: number) => {
 
 const handleLogin = async () => {
   isLoading.value = true;
-  error.value = '';
   
   try {
     const response = await apiClient.post('/auth/login', {
@@ -186,27 +183,17 @@ const handleLogin = async () => {
         const retryAfter = err.response.data.retry_after;
         if (retryAfter && retryAfter > 0) {
           countdown.value = retryAfter;
-          error.value = `Akun terkunci karena terlalu banyak percobaan gagal. Coba lagi dalam ${formatCountdown(countdown.value)}.`;
-          if (timerInterval) clearInterval(timerInterval);
-          timerInterval = setInterval(() => {
-            countdown.value--;
-            if (countdown.value <= 0) {
-              if (timerInterval) clearInterval(timerInterval);
-              error.value = ''; // clear error so user knows they can try again
-            } else {
-              error.value = `Akun terkunci karena terlalu banyak percobaan gagal. Coba lagi dalam ${formatCountdown(countdown.value)}.`;
-            }
-          }, 1000);
+          toast.error(`Akun terkunci karena terlalu banyak percobaan gagal. Coba lagi dalam ${formatCountdown(countdown.value)}.`);
         } else {
-          error.value = 'Akun terkunci karena terlalu banyak percobaan gagal. Coba lagi nanti.';
+          toast.error('Akun terkunci karena terlalu banyak percobaan gagal. Coba lagi nanti.');
         }
       } else if (err.response.status === 401) {
-        error.value = loginType.value === 'employee' ? 'NPK atau Password salah.' : 'Username atau Password salah.';
+        toast.error(loginType.value === 'employee' ? 'NPK atau Password salah.' : 'Username atau Password salah.');
       } else {
-        error.value = err.response.data.error || 'Terjadi kesalahan pada server.';
+        toast.error(err.response.data.error || 'Terjadi kesalahan pada server.');
       }
     } else {
-      error.value = 'Tidak dapat terhubung ke server. Periksa koneksi Anda.';
+      toast.error('Tidak dapat terhubung ke server. Periksa koneksi Anda.');
     }
   } finally {
     isLoading.value = false;

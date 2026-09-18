@@ -29,13 +29,7 @@
         </button>
       </div>
 
-      <!-- Error / Success Messages -->
-      <div v-if="error" class="mb-4 bg-red-50 border border-red-200 text-red-700 px-4 py-3 rounded-lg text-sm">
-        {{ error }}
-      </div>
-      <div v-if="successMsg" class="mb-4 bg-green-50 border border-green-200 text-green-700 px-4 py-3 rounded-lg text-sm">
-        {{ successMsg }}
-      </div>
+
 
       <!-- Catalog Tab -->
       <div v-if="activeTab === 'catalog'">
@@ -117,11 +111,11 @@
           <div class="grid grid-cols-2 gap-4">
             <div>
               <label class="block text-sm font-medium text-gray-700 mb-1">Poin Diperlukan</label>
-              <input type="number" v-model="rewardForm.points_required" class="w-full px-3 py-2 border border-gray-300 rounded-lg shadow-sm focus:outline-none focus:ring-1 focus:ring-primary focus:border-primary" />
+              <input type="number" min="0" @wheel.prevent v-model="rewardForm.points_required" class="w-full px-3 py-2 border border-gray-300 rounded-lg shadow-sm focus:outline-none focus:ring-1 focus:ring-primary focus:border-primary [appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none" />
             </div>
             <div>
               <label class="block text-sm font-medium text-gray-700 mb-1">Stok</label>
-              <input type="number" v-model="rewardForm.stock" class="w-full px-3 py-2 border border-gray-300 rounded-lg shadow-sm focus:outline-none focus:ring-1 focus:ring-primary focus:border-primary" />
+              <input type="number" min="0" @wheel.prevent v-model="rewardForm.stock" class="w-full px-3 py-2 border border-gray-300 rounded-lg shadow-sm focus:outline-none focus:ring-1 focus:ring-primary focus:border-primary [appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none" />
             </div>
           </div>
           
@@ -143,9 +137,11 @@ import { useAuthStore } from '../../stores/auth';
 import apiClient from '../../api/client';
 import AdminSidebar from '../../components/layout/AdminSidebar.vue';
 import DataTable from '../../components/ui/DataTable.vue';
+import { useToast } from 'vue-toastification';
 
 const router = useRouter();
 const authStore = useAuthStore();
+const toast = useToast();
 
 const rewardColumns = [
   { key: 'title', label: 'Nama Hadiah' },
@@ -171,9 +167,6 @@ const redemptionParams = ref({ page: 1, limit: 10, search: '', sort: '', order: 
 
 const isLoadingHistory = ref(false);
 const isProcessing = ref(false);
-
-const error = ref('');
-const successMsg = ref('');
 
 const showRewardModal = ref(false);
 const editingReward = ref<any>(null);
@@ -218,19 +211,7 @@ watch(activeTab, (newVal) => {
   }
 });
 
-const showMessage = (msg: string, isError = false) => {
-  if (isError) {
-    error.value = msg;
-    successMsg.value = '';
-  } else {
-    successMsg.value = msg;
-    error.value = '';
-  }
-  setTimeout(() => {
-    error.value = '';
-    successMsg.value = '';
-  }, 5000);
-};
+
 
 const openRewardModal = (reward?: any) => {
   if (reward) {
@@ -253,15 +234,15 @@ const saveReward = async () => {
   try {
     if (editingReward.value) {
       await apiClient.put(`/admin/rewards/${editingReward.value.id}`, rewardForm.value);
-      showMessage('Hadiah berhasil diupdate');
+      toast.success('Hadiah berhasil diupdate');
     } else {
       await apiClient.post('/admin/rewards', rewardForm.value);
-      showMessage('Hadiah berhasil ditambahkan');
+      toast.success('Hadiah berhasil ditambahkan');
     }
     showRewardModal.value = false;
     fetchRewards();
   } catch (err: any) {
-    showMessage(err.response?.data?.error || 'Gagal menyimpan hadiah', true);
+    toast.error(err.response?.data?.error || 'Gagal menyimpan hadiah');
   } finally {
     isProcessing.value = false;
   }
@@ -271,10 +252,10 @@ const deleteReward = async (id: number) => {
   if (!confirm('Yakin ingin menghapus hadiah ini?')) return;
   try {
     await apiClient.delete(`/admin/rewards/${id}`);
-    showMessage('Hadiah berhasil dihapus');
+    toast.success('Hadiah berhasil dihapus');
     fetchRewards();
   } catch (err: any) {
-    showMessage(err.response?.data?.error || 'Gagal menghapus hadiah', true);
+    toast.error(err.response?.data?.error || 'Gagal menghapus hadiah');
   }
 };
 

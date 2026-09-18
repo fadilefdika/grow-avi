@@ -131,7 +131,7 @@
           </div>
           <div>
             <label class="block text-sm font-medium text-gray-700 mb-1">Poin Default</label>
-            <input type="number" v-model="activityForm.default_points" @wheel.prevent class="w-full px-3 py-2 border border-gray-300 rounded-lg shadow-sm focus:outline-none focus:ring-1 focus:ring-primary focus:border-primary [appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none" />
+            <input type="number" min="0" v-model="activityForm.default_points" @wheel.prevent class="w-full px-3 py-2 border border-gray-300 rounded-lg shadow-sm focus:outline-none focus:ring-1 focus:ring-primary focus:border-primary [appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none" />
           </div>
           <div class="flex items-center">
             <input id="is_custom_input" type="checkbox" v-model="activityForm.is_custom_input" class="h-4 w-4 text-primary focus:ring-primary border-gray-300 rounded">

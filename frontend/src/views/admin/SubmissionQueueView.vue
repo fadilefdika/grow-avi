@@ -112,7 +112,7 @@
                 <div class="bg-blue-50 p-4 rounded-xl border border-blue-100">
                   <label class="block text-sm font-medium text-blue-900 mb-2">Poin yang Diberikan</label>
                   <div class="flex items-center">
-                    <input type="number" v-model="pointsOverride" @wheel.prevent class="w-24 px-3 py-2 border border-blue-200 rounded-lg shadow-sm focus:outline-none focus:ring-1 focus:ring-primary focus:border-primary text-lg font-bold text-primary [appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none" />
+                    <input type="number" min="0" v-model="pointsOverride" @wheel.prevent class="w-24 px-3 py-2 border border-blue-200 rounded-lg shadow-sm focus:outline-none focus:ring-1 focus:ring-primary focus:border-primary text-lg font-bold text-primary [appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none" />
                     <span class="ml-2 text-sm font-medium text-blue-700">pts (Base: {{ selectedDetail.default_points }})</span>
                   </div>
                   <p class="text-xs text-blue-600 mt-2">Anda bisa mengubah poin default jika aktivitas ini bersifat dinamis (misal: Inovasi).</p>
@@ -153,7 +153,6 @@
         <!-- Modal Footer -->
         <div class="px-6 py-4 border-t border-gray-100 bg-gray-50 flex items-center justify-between">
           <div>
-             <span v-if="error" class="text-sm font-medium text-red-600">{{ error }}</span>
           </div>
           <div class="flex gap-3">
             <template v-if="actionType === 'reject'">
@@ -226,7 +225,6 @@ const pointsOverride = ref<number>(0);
 const actionType = ref<'reject' | null>(null);
 const adminNotes = ref('');
 const isProcessing = ref(false);
-const error = ref('');
 const toast = useToast();
 const showZeroPointsConfirm = ref(false);
 
@@ -257,11 +255,10 @@ const openDetail = async (id: number) => {
     pointsOverride.value = res.data.data.default_points;
     actionType.value = null;
     adminNotes.value = '';
-    error.value = '';
   } catch (err: any) {
     console.error(err);
     const errorMsg = err.response?.data?.error || "Gagal load detail pengajuan";
-    alert(errorMsg);
+    toast.error(errorMsg);
   }
 };
 
@@ -287,7 +284,6 @@ const confirmApproveZero = async () => {
 const doApprove = async () => {
   if (!selectedDetail.value) return;
   isProcessing.value = true;
-  error.value = '';
   try {
     await apiClient.post(`/admin/submissions/${selectedDetail.value.id}/approve`, {
       points_override: pointsOverride.value
@@ -297,7 +293,6 @@ const doApprove = async () => {
     fetchQueue();
   } catch (err: any) {
     const errorMsg = err.response?.data?.error || 'Terjadi kesalahan saat approve';
-    error.value = errorMsg;
     toast.error(errorMsg);
   } finally {
     isProcessing.value = false;
@@ -307,7 +302,6 @@ const doApprove = async () => {
 const submitReject = async () => {
   if (!selectedDetail.value) return;
   isProcessing.value = true;
-  error.value = '';
   try {
     await apiClient.post(`/admin/submissions/${selectedDetail.value.id}/reject`, {
       admin_notes: adminNotes.value
@@ -317,7 +311,6 @@ const submitReject = async () => {
     fetchQueue();
   } catch (err: any) {
     const errorMsg = err.response?.data?.error || 'Terjadi kesalahan saat reject';
-    error.value = errorMsg;
     toast.error(errorMsg);
   } finally {
     isProcessing.value = false;

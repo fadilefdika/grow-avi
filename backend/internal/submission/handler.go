@@ -40,10 +40,10 @@ type CreateSubmissionRequest struct {
 	NomorSS            string `form:"nomor_ss"`
 }
 
-// generateGrowID generates a unique GROW ID: GR + YYMMDD + 4-digit sequence
+// generateGrowID generates a unique GROW ID: GY + YY + 3-digit sequence
 func (h *SubmissionHandler) generateGrowID() (string, error) {
-	dateStr := time.Now().Format("060102")
-	prefix := "GR" + dateStr
+	dateStr := time.Now().Format("06")
+	prefix := "GY" + dateStr
 	var seq int
 	err := h.db.QueryRow(
 		"SELECT COUNT(*) FROM activity_submissions WHERE grow_id LIKE @p1",
@@ -52,7 +52,7 @@ func (h *SubmissionHandler) generateGrowID() (string, error) {
 	if err != nil {
 		return "", err
 	}
-	return fmt.Sprintf("%s%04d", prefix, seq+1), nil
+	return fmt.Sprintf("%s%03d", prefix, seq+1), nil
 }
 
 // convertImage converts an uploaded image to WebP (via cwebp binary if available) or optimized JPEG fallback.

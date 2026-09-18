@@ -369,13 +369,7 @@
           </div>
         </div>
 
-        <!-- Error Message -->
-        <div
-          v-if="errorMessage"
-          class="mb-4 p-3 bg-red-50 text-red-700 rounded-lg text-sm border border-red-100"
-        >
-          {{ errorMessage }}
-        </div>
+
 
         <!-- Submit Button -->
         <div class="flex justify-end items-center bg-gray-100 p-4 rounded-xl">
@@ -495,7 +489,6 @@ const form = ref<{
 const files = ref<{ file: File; preview: string; name: string }[]>([]);
 const fileInput = ref<any>(null);
 const isSubmitting = ref(false);
-const errorMessage = ref("");
 
 const filteredActivities = computed(() => {
   if (!form.value.categoryId) return [];
@@ -520,11 +513,9 @@ const handleFileUpload = (event: any) => {
   if (!selectedFiles) return;
 
   if (files.value.length + selectedFiles.length > 5) {
-    errorMessage.value = "Maksimal 5 file yang diperbolehkan.";
+    toast.error("Maksimal 5 file yang diperbolehkan.");
     return;
   }
-
-  errorMessage.value = "";
 
   for (let i = 0; i < selectedFiles.length; i++) {
     const file = selectedFiles[i];
@@ -551,7 +542,7 @@ const removeFile = (index: number) => {
 
 const submitForm = async () => {
   if (!isSubmitSS.value && files.value.length === 0) {
-    errorMessage.value = "Anda harus mengunggah setidaknya 1 bukti aktivitas.";
+    toast.error("Anda harus mengunggah setidaknya 1 bukti aktivitas.");
     return;
   }
 
@@ -559,12 +550,11 @@ const submitForm = async () => {
     form.value.activityId === "other" &&
     !form.value.customActivityName.trim()
   ) {
-    errorMessage.value = "Mohon isi nama kegiatan (Yang lain).";
+    toast.error("Mohon isi nama kegiatan (Yang lain).");
     return;
   }
 
   isSubmitting.value = true;
-  errorMessage.value = "";
 
   try {
     const formData = new FormData();
@@ -632,8 +622,7 @@ const submitForm = async () => {
     }, 1500);
   } catch (err: any) {
     isSubmitting.value = false;
-    errorMessage.value =
-      err.response?.data?.error || "Terjadi kesalahan saat mengirim pengajuan.";
+    toast.error(err.response?.data?.error || "Terjadi kesalahan saat mengirim pengajuan.");
     console.error(err);
   }
 };
