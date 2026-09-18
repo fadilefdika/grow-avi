@@ -50,11 +50,10 @@
               <input 
                 :id="loginType === 'employee' ? 'npk' : 'username'" 
                 :name="loginType === 'employee' ? 'npk' : 'username'" 
-                :type="loginType === 'employee' ? 'number' : 'text'"
-                min="0"
-                @wheel.prevent
+                type="text"
                 :inputmode="loginType === 'employee' ? 'numeric' : 'text'"
                 :pattern="loginType === 'employee' ? '[0-9]*' : undefined"
+                @input="loginType === 'employee' ? usernameInput = $event.target.value.replace(/[^0-9]/g, '') : null"
                 required 
                 v-model="usernameInput" 
                 class="appearance-none rounded-lg relative block w-full px-3 py-3 pl-10 border border-gray-300 placeholder-gray-500 text-gray-900 focus:outline-none focus:ring-2 focus:ring-primary focus:border-primary focus:z-10 sm:text-sm transition-colors [appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none" 
