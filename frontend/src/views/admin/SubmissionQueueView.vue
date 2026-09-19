@@ -326,7 +326,7 @@ const submitReject = async () => {
 const formatDate = (dateString: string) => {
   if (!dateString) return '';
   const date = new Date(dateString);
-  return date.toLocaleDateString('id-ID', { day: '2-digit', month: 'short', year: 'numeric', hour: '2-digit', minute: '2-digit' });
+  return date.toLocaleString('id-ID', { day: '2-digit', month: 'short', year: 'numeric', hour: '2-digit', minute: '2-digit', timeZone: 'Asia/Jakarta' }).replace(/\./g, ':');
 };
 
 // Date-only formatter (for activity_date which has no meaningful time component)
@@ -335,7 +335,7 @@ const formatDateOnly = (dateString: string) => {
   // Parse just the date portion to avoid timezone shifting
   const [year, month, day] = dateString.split('T')[0].split('-').map(Number);
   const date = new Date(year, month - 1, day);
-  return date.toLocaleDateString('id-ID', { day: '2-digit', month: 'short', year: 'numeric' });
+  return date.toLocaleDateString('id-ID', { day: '2-digit', month: 'short', year: 'numeric', timeZone: 'Asia/Jakarta' });
 };
 
 onMounted(() => {

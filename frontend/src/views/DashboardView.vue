@@ -377,7 +377,7 @@ const formatName = (name?: string) => {
 const formatDate = (dateString: string) => {
   if (!dateString) return '';
   const date = new Date(dateString);
-  return date.toLocaleDateString('id-ID', { day: '2-digit', month: 'short', year: 'numeric' });
+  return date.toLocaleString('id-ID', { day: '2-digit', month: 'short', year: 'numeric', hour: '2-digit', minute: '2-digit', timeZone: 'Asia/Jakarta' }).replace(/\./g, ':');
 };
 
 const getStatusIconBg = (status: string) => {

@@ -329,7 +329,7 @@ const goToRevision = () => {
 const formatDate = (dateString: string) => {
   if (!dateString) return '';
   const date = new Date(dateString);
-  return date.toLocaleDateString('id-ID', { day: '2-digit', month: 'short', year: 'numeric' });
+  return date.toLocaleString('id-ID', { day: '2-digit', month: 'short', year: 'numeric', hour: '2-digit', minute: '2-digit', timeZone: 'Asia/Jakarta' }).replace(/\./g, ':');
 };
 
 const formatDateOnly = (dateString: string) => {
@@ -337,7 +337,7 @@ const formatDateOnly = (dateString: string) => {
   const parts = dateString.split('T')[0].split('-');
   if (parts.length === 3) {
     const d = new Date(parseInt(parts[0]), parseInt(parts[1])-1, parseInt(parts[2]));
-    return d.toLocaleDateString('id-ID', { day: '2-digit', month: 'short', year: 'numeric' });
+    return d.toLocaleDateString('id-ID', { day: '2-digit', month: 'short', year: 'numeric', timeZone: 'Asia/Jakarta' });
   }
   return dateString;
 };
