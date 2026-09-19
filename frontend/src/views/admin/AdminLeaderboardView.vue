@@ -16,19 +16,32 @@
       <!-- Filters -->
       <div class="bg-white rounded-xl p-6 shadow-sm border border-gray-100 mb-6">
         <div class="flex gap-4 max-w-2xl">
-          <div class="flex-1">
-            <label class="block text-xs font-medium text-gray-500 mb-2">Filter Kategori</label>
-            <select v-model="filterCategory" @change="fetchLeaderboard" class="w-full bg-white border border-gray-300 text-gray-700 rounded-lg px-4 py-2 text-sm focus:outline-none focus:ring-1 focus:ring-primary focus:border-primary">
-              <option value="">Semua Kategori</option>
-              <option v-for="cat in categories" :key="cat.id" :value="cat.id">{{ cat.name }}</option>
-            </select>
+          <!-- Kategori -->
+          <div class="flex-1 relative">
+            <label class="block text-xs font-bold text-gray-500 mb-1.5 uppercase tracking-wide">Kategori</label>
+            <button @click="toggleCategoryDropdown" class="w-full text-left bg-gray-50 border-2 border-gray-200 text-gray-700 rounded-xl px-3 py-2.5 text-sm font-bold flex justify-between items-center transition-colors hover:border-primary/50" :class="{'border-primary': showCategoryDropdown}">
+              <span class="truncate pr-2">{{ getCategoryName(filterCategory) }}</span>
+              <svg class="w-4 h-4 text-gray-400 shrink-0 transition-transform" :class="{'rotate-180': showCategoryDropdown}" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"></path></svg>
+            </button>
+            
+            <div v-if="showCategoryDropdown" class="absolute z-50 w-full mt-2 bg-white border border-gray-100 rounded-xl shadow-xl max-h-60 overflow-y-auto p-1">
+              <div @click="selectCategory('')" class="px-3 py-2.5 text-sm font-bold rounded-lg hover:bg-blue-50 cursor-pointer" :class="!filterCategory ? 'text-primary bg-blue-50' : 'text-gray-600'">Semua Kategori</div>
+              <div v-for="cat in categories" :key="cat.id" @click="selectCategory(cat.id)" class="px-3 py-2.5 text-sm font-bold rounded-lg hover:bg-blue-50 cursor-pointer truncate" :class="filterCategory === cat.id ? 'text-primary bg-blue-50' : 'text-gray-600'">{{ cat.name }}</div>
+            </div>
           </div>
-          <div class="flex-1">
-            <label class="block text-xs font-medium text-gray-500 mb-2">Filter Departemen</label>
-            <select v-model="filterDepartment" @change="fetchLeaderboard" class="w-full bg-white border border-gray-300 text-gray-700 rounded-lg px-4 py-2 text-sm focus:outline-none focus:ring-1 focus:ring-primary focus:border-primary">
-              <option value="">Semua Departemen</option>
-              <option v-for="dept in availableDepartments" :key="dept" :value="dept">{{ dept }}</option>
-            </select>
+          
+          <!-- Departemen -->
+          <div class="flex-1 relative">
+            <label class="block text-xs font-bold text-gray-500 mb-1.5 uppercase tracking-wide">Departemen</label>
+            <button @click="toggleDepartmentDropdown" class="w-full text-left bg-gray-50 border-2 border-gray-200 text-gray-700 rounded-xl px-3 py-2.5 text-sm font-bold flex justify-between items-center transition-colors hover:border-primary/50" :class="{'border-primary': showDepartmentDropdown}">
+              <span class="truncate pr-2">{{ filterDepartment || 'Semua Departemen' }}</span>
+              <svg class="w-4 h-4 text-gray-400 shrink-0 transition-transform" :class="{'rotate-180': showDepartmentDropdown}" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"></path></svg>
+            </button>
+            
+            <div v-if="showDepartmentDropdown" class="absolute z-50 w-full mt-2 bg-white border border-gray-100 rounded-xl shadow-xl max-h-60 overflow-y-auto p-1">
+              <div @click="selectDepartment('')" class="px-3 py-2.5 text-sm font-bold rounded-lg hover:bg-blue-50 cursor-pointer" :class="!filterDepartment ? 'text-primary bg-blue-50' : 'text-gray-600'">Semua Departemen</div>
+              <div v-for="dept in availableDepartments" :key="dept" @click="selectDepartment(dept)" class="px-3 py-2.5 text-sm font-bold rounded-lg hover:bg-blue-50 cursor-pointer truncate" :class="filterDepartment === dept ? 'text-primary bg-blue-50' : 'text-gray-600'">{{ dept }}</div>
+            </div>
           </div>
         </div>
       </div>
@@ -51,7 +64,7 @@
         <table class="min-w-full divide-y divide-gray-200">
           <thead class="bg-gray-50">
             <tr>
-              <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider w-16">Rank</th>
+              <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider w-16">Peringkat</th>
               <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Karyawan</th>
               <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Departemen</th>
               <th class="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">Total Poin</th>
@@ -70,7 +83,7 @@
                 {{ entry.department }}
               </td>
               <td class="px-6 py-4 whitespace-nowrap text-right">
-                <span class="text-lg font-bold text-primary">{{ entry.balance }} pts</span>
+                <span class="text-lg font-bold text-primary">{{ entry.balance }} poin</span>
               </td>
             </tr>
           </tbody>
@@ -91,6 +104,48 @@ const availableDepartments = ref<string[]>([]);
 const filterCategory = ref('');
 const filterDepartment = ref('');
 const isLoading = ref(true);
+
+const showCategoryDropdown = ref(false);
+const showDepartmentDropdown = ref(false);
+
+const toggleCategoryDropdown = () => {
+  showCategoryDropdown.value = !showCategoryDropdown.value;
+  showDepartmentDropdown.value = false;
+};
+
+const toggleDepartmentDropdown = () => {
+  showDepartmentDropdown.value = !showDepartmentDropdown.value;
+  showCategoryDropdown.value = false;
+};
+
+const selectCategory = (id: string) => {
+  filterCategory.value = id;
+  showCategoryDropdown.value = false;
+  fetchLeaderboard();
+};
+
+const selectDepartment = (dept: string) => {
+  filterDepartment.value = dept;
+  showDepartmentDropdown.value = false;
+  fetchLeaderboard();
+};
+
+const getCategoryName = (id: string) => {
+  if (!id) return 'Semua Kategori';
+  const c = categories.value.find(c => c.id == id);
+  return c ? c.name : 'Semua Kategori';
+};
+
+// Close dropdowns when clicking outside (simple implementation by listening on window)
+if (typeof window !== 'undefined') {
+  window.addEventListener('click', (e) => {
+    const target = e.target as HTMLElement;
+    if (!target.closest('.relative')) {
+      showCategoryDropdown.value = false;
+      showDepartmentDropdown.value = false;
+    }
+  });
+}
 
 const fetchCategories = async () => {
   try {

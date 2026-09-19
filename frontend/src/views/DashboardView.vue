@@ -1,144 +1,212 @@
 <template>
-  <div class="min-h-screen bg-gray-50 pb-20">
-    <!-- Top Header -->
-    <div class="bg-primary pt-12 pb-24 px-6 rounded-b-[2rem] shadow-md relative">
-      <div class="flex justify-between items-center relative z-10">
-        <div>
-          <h2 class="text-white text-sm opacity-80">Halo,</h2>
-          <h1 class="text-white text-xl font-bold">{{ auth.user?.name || auth.user?.npk || 'Karyawan' }}</h1>
+  <div class="min-h-screen bg-gray-50 pb-24">
+    <!-- Hero Header -->
+    <div class="hero-gradient pt-12 pb-28 px-6 relative overflow-hidden">
+      <!-- Background decorative elements -->
+      <div class="absolute inset-0 overflow-hidden pointer-events-none">
+        <div class="absolute -top-10 -right-10 w-48 h-48 rounded-full opacity-10 animate-float" style="background: radial-gradient(circle, #FFA64D, transparent);"></div>
+        <div class="absolute top-20 -left-8 w-32 h-32 rounded-full opacity-10 animate-float" style="background: radial-gradient(circle, #1CB0F6, transparent); animation-delay: 1s;"></div>
+        <div class="absolute bottom-0 right-1/3 w-24 h-24 rounded-full opacity-10" style="background: radial-gradient(circle, #fff, transparent);"></div>
+      </div>
+
+      <div class="flex justify-between items-start gap-3 relative z-10">
+        <!-- Name section: min-w-0 agar flex tidak overflow -->
+        <div class="min-w-0 flex-1">
+          <p class="text-white/70 text-sm font-semibold mb-0.5">Halo, 👋</p>
+          <h1 class="text-white text-xl font-black leading-tight truncate">{{ formatName(auth.user?.name) || auth.user?.npk || 'Karyawan' }}</h1>
+          <p class="text-white/60 text-xs font-medium mt-0.5">Siap kumpulkan poin hari ini?</p>
         </div>
-        <div class="flex items-center gap-3 relative z-10">
-          <div class="w-10 h-10 bg-white/20 rounded-full flex items-center justify-center backdrop-blur-sm border border-white/30 shadow-inner">
-            <span class="text-white font-bold text-lg">{{ getInitial(auth.user?.name || auth.user?.npk || 'U') }}</span>
+        <div class="flex items-center gap-2 flex-shrink-0 relative z-10">
+          <!-- Avatar -->
+          <div class="w-10 h-10 rounded-2xl glass-card flex items-center justify-center shadow-lg">
+            <span class="text-white font-black text-base">{{ getInitial(auth.user?.name || auth.user?.npk || 'U') }}</span>
           </div>
-          <button @click="handleLogout" class="w-8 h-8 rounded-full bg-white/10 hover:bg-red-500/80 flex items-center justify-center transition-colors text-white border border-white/20">
+          <!-- Logout -->
+          <button @click="handleLogout" class="w-9 h-9 rounded-xl glass-card flex items-center justify-center transition-all hover:bg-red-500/40 text-white">
             <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1" />
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1" />
             </svg>
           </button>
         </div>
       </div>
     </div>
 
-    <!-- Main Content (Overlapping Header) -->
-    <div class="px-5 -mt-16 relative z-20 space-y-5">
-      
-      <!-- Balance Card -->
-      <div class="bg-white rounded-2xl p-5 shadow-lg border border-gray-100 flex items-center justify-between">
-        <div>
-          <p class="text-gray-500 text-xs font-medium mb-1">Total Poin GROW</p>
-          <div class="flex items-end gap-1">
-            <span class="text-3xl font-extrabold text-gray-900 leading-none">{{ balance }}</span>
-            <span class="text-sm font-semibold text-secondary mb-1">pts</span>
+    <!-- Main Content Overlay -->
+    <div class="px-4 -mt-20 relative z-20 space-y-4">
+
+      <!-- Points & Rank Card -->
+      <div class="bg-white rounded-3xl shadow-xl border border-gray-100 overflow-hidden">
+        <div class="flex items-stretch divide-x divide-gray-100">
+          <!-- Points -->
+          <div class="flex-1 p-5">
+            <p class="text-gray-500 text-xs font-bold uppercase tracking-wider mb-2">Total Poin GROW</p>
+            <div class="flex items-end gap-1.5">
+              <span class="text-4xl font-black text-gray-900 leading-none tabular-nums">{{ displayBalance }}</span>
+              <span class="text-sm font-bold text-secondary mb-1">pts</span>
+            </div>
+            <!-- XP Progress Bar -->
+            <div class="mt-3">
+              <div class="xp-bar-track">
+                <div class="xp-bar-fill" :style="{ width: xpPercent + '%' }"></div>
+              </div>
+              <p class="text-[10px] text-gray-400 font-semibold mt-1">{{ balance }} / {{ nextMilestone }} pts ke milestone berikutnya</p>
+            </div>
           </div>
-        </div>
-        <div class="h-16 w-[1px] bg-gray-100"></div>
-        <div class="text-right cursor-pointer group" @click="$router.push('/leaderboard')">
-          <p class="text-gray-500 text-xs font-medium mb-1 group-hover:text-primary transition-colors">Peringkat <span class="text-[10px] bg-primary/10 text-primary px-1 rounded ml-1">Lihat</span></p>
-          <div class="flex items-center justify-end gap-1">
-            <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 text-secondary" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 3v4M3 5h4M6 17v4m-2-2h4m5-16l2.286 6.857L21 12l-5.714 2.143L13 21l-2.286-6.857L5 12l5.714-2.143L13 3z" />
-            </svg>
-            <span class="text-2xl font-bold text-gray-900 group-hover:text-primary transition-colors">#{{ rank }}</span>
+          <!-- Rank -->
+          <div class="p-5 text-right cursor-pointer group" @click="$router.push('/leaderboard')">
+            <p class="text-gray-500 text-xs font-bold uppercase tracking-wider mb-2">
+              Peringkat
+              <span class="ml-1 text-[9px] font-bold bg-primary/10 text-primary px-1.5 py-0.5 rounded-full">Lihat</span>
+            </p>
+            <div class="flex items-center justify-end gap-2">
+              <span v-if="balance > 0" class="text-3xl font-black text-gray-900 group-hover:text-primary transition-colors">#{{ rank }}</span>
+              <span v-else class="text-lg font-black text-gray-400 group-hover:text-primary transition-colors">Belum ada</span>
+            </div>
+            <div class="flex items-center justify-end gap-1 mt-1">
+              <svg xmlns="http://www.w3.org/2000/svg" class="h-3.5 w-3.5 text-secondary" fill="currentColor" viewBox="0 0 20 20">
+                <path d="M9.049 2.927c.3-.921 1.603-.921 1.902 0l1.07 3.292a1 1 0 00.95.69h3.462c.969 0 1.371 1.24.588 1.81l-2.8 2.034a1 1 0 00-.364 1.118l1.07 3.292c.3.921-.755 1.688-1.54 1.118l-2.8-2.034a1 1 0 00-1.175 0l-2.8 2.034c-.784.57-1.838-.197-1.539-1.118l1.07-3.292a1 1 0 00-.364-1.118L2.98 8.72c-.783-.57-.38-1.81.588-1.81h3.461a1 1 0 00.951-.69l1.07-3.292z" />
+              </svg>
+              <span class="text-[10px] font-bold text-gray-400 group-hover:text-primary transition-colors">Leaderboard</span>
+            </div>
           </div>
         </div>
       </div>
 
       <!-- Quick Actions -->
-      <div class="grid grid-cols-2 gap-4">
-        <router-link to="/submission" class="bg-white rounded-xl p-4 shadow-sm border border-gray-100 flex flex-col items-center justify-center gap-2 hover:border-primary transition-all group">
-          <div class="w-12 h-12 rounded-full bg-blue-50 flex items-center justify-center group-hover:bg-primary transition-colors">
-            <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6 text-primary group-hover:text-white transition-colors" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4" />
+      <div class="grid grid-cols-2 gap-3">
+        <!-- Submit -->
+        <router-link
+          to="/submission"
+          id="btn-buat-pengajuan"
+          class="card-game p-5 flex flex-col items-center justify-center gap-3 group cursor-pointer border-2 border-transparent hover:border-primary/30"
+        >
+          <div class="w-14 h-14 rounded-2xl bg-blue-50 flex items-center justify-center group-hover:bg-primary transition-all duration-300 shadow-sm group-hover:shadow-primary/30 group-hover:shadow-md">
+            <svg xmlns="http://www.w3.org/2000/svg" class="h-7 w-7 text-primary group-hover:text-white transition-colors" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M12 4v16m8-8H4" />
             </svg>
           </div>
-          <span class="text-xs font-semibold text-gray-800 text-center">Buat<br>Pengajuan</span>
+          <div class="text-center">
+            <span class="text-sm font-black text-gray-800 group-hover:text-primary transition-colors">Buat Pengajuan</span>
+            <p class="text-[10px] text-gray-400 font-semibold mt-0.5">Kumpulkan bukti aktivitas</p>
+          </div>
         </router-link>
-        
-        <router-link to="/rewards" class="bg-white rounded-xl p-4 shadow-sm border border-gray-100 flex flex-col items-center justify-center gap-2 hover:border-secondary transition-all group">
-          <div class="w-12 h-12 rounded-full bg-orange-50 flex items-center justify-center group-hover:bg-secondary transition-colors">
-            <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6 text-secondary group-hover:text-white transition-colors" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+
+        <!-- Rewards -->
+        <router-link
+          to="/rewards"
+          id="btn-tukar-hadiah"
+          class="card-game p-5 flex flex-col items-center justify-center gap-3 group cursor-pointer border-2 border-transparent hover:border-secondary/30"
+        >
+          <div class="w-14 h-14 rounded-2xl bg-orange-50 flex items-center justify-center group-hover:bg-secondary transition-all duration-300 shadow-sm group-hover:shadow-secondary/30 group-hover:shadow-md">
+            <svg xmlns="http://www.w3.org/2000/svg" class="h-7 w-7 text-secondary group-hover:text-white transition-colors" fill="none" viewBox="0 0 24 24" stroke="currentColor">
               <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v13m0-13V6a2 2 0 112 2h-2zm0 0V5.5A2.5 2.5 0 109.5 8H12zm-7 4h14M5 12a2 2 0 110-4h14a2 2 0 110 4M5 12v7a2 2 0 002 2h10a2 2 0 002-2v-7" />
             </svg>
           </div>
-          <span class="text-xs font-semibold text-gray-800 text-center">Tukar<br>Hadiah</span>
+          <div class="text-center">
+            <span class="text-sm font-black text-gray-800 group-hover:text-secondary transition-colors">Tukar Hadiah</span>
+            <p class="text-[10px] text-gray-400 font-semibold mt-0.5">Gunakan poinmu</p>
+          </div>
         </router-link>
       </div>
 
-      <!-- Admin Actions (Only if admin) -->
-      <div v-if="auth.user?.role === 'admin'" class="bg-gray-800 rounded-xl p-4 shadow-sm flex items-center justify-between mt-2">
+      <!-- Admin Mode Banner -->
+      <div v-if="auth.user?.role === 'admin'" class="rounded-2xl p-4 flex items-center justify-between" style="background: linear-gradient(135deg, #1e293b, #334155);">
         <div class="flex items-center gap-3">
-          <div class="w-10 h-10 bg-gray-700 rounded-full flex items-center justify-center">
-             <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 text-yellow-500" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+          <div class="w-10 h-10 bg-yellow-500/20 rounded-xl flex items-center justify-center">
+            <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 text-yellow-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
               <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z" />
             </svg>
           </div>
           <div>
             <h3 class="text-white font-bold text-sm">Mode Administrator</h3>
-            <p class="text-gray-400 text-xs">Akses panel admin penuh</p>
+            <p class="text-gray-400 text-xs font-medium">Akses panel admin penuh</p>
           </div>
         </div>
-        <router-link to="/admin/dashboard" class="px-4 py-2 bg-yellow-500 text-gray-900 font-bold rounded-lg text-sm hover:bg-yellow-400 transition-colors">
+        <router-link to="/admin/dashboard" class="px-4 py-2 bg-yellow-400 text-gray-900 font-black rounded-xl text-sm hover:bg-yellow-300 transition-colors shadow-lg">
           Buka Panel
         </router-link>
       </div>
 
-      <!-- Recent Submissions Tracker -->
-      <div class="bg-white rounded-2xl p-5 shadow-sm border border-gray-100">
+      <!-- Recent Submissions -->
+      <div class="card-game p-5">
         <div class="flex justify-between items-center mb-4">
-          <h3 class="font-bold text-gray-800">Riwayat Pengajuan</h3>
-          <button @click="$router.push('/history')" v-if="allSubmissions.length > 5" class="text-xs text-primary font-medium hover:underline">
+          <div>
+            <h3 class="font-black text-gray-800 text-base">Riwayat Terkini</h3>
+            <p class="text-xs text-gray-400 font-semibold">5 pengajuan terakhir</p>
+          </div>
+          <button
+            @click="$router.push('/history')"
+            v-if="allSubmissions.length > 0"
+            class="text-xs font-bold text-primary bg-primary/10 hover:bg-primary/20 px-3 py-1.5 rounded-xl transition-colors"
+          >
             Lihat Semua
           </button>
         </div>
 
         <div v-if="isLoading" class="flex justify-center py-8">
-          <svg class="animate-spin h-6 w-6 text-primary" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+          <svg class="animate-spin h-7 w-7 text-primary" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
             <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
             <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
           </svg>
         </div>
 
         <div v-else-if="allSubmissions.length === 0" class="text-center py-8">
-          <div class="w-16 h-16 bg-gray-50 rounded-full flex items-center justify-center mx-auto mb-3">
-            <svg xmlns="http://www.w3.org/2000/svg" class="h-8 w-8 text-gray-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+          <div class="w-16 h-16 bg-gray-50 rounded-2xl flex items-center justify-center mx-auto mb-3">
+            <svg xmlns="http://www.w3.org/2000/svg" class="h-8 w-8 text-gray-300" fill="none" viewBox="0 0 24 24" stroke="currentColor">
               <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
             </svg>
           </div>
-          <p class="text-sm text-gray-500">Belum ada pengajuan poin.</p>
+          <p class="text-sm font-bold text-gray-400">Belum ada pengajuan.</p>
+          <p class="text-xs text-gray-300 font-medium mt-1">Yuk, mulai kumpulkan poinmu!</p>
         </div>
 
-        <div v-else class="space-y-3">
-          <div v-for="sub in displayedSubmissions" :key="sub.id" @click="openDetail(sub)" class="flex items-center justify-between p-3 rounded-xl border border-gray-100 bg-gray-50/50 cursor-pointer hover:bg-gray-100 transition-colors group">
-            <div class="flex items-center gap-3">
-              <div :class="getStatusIconBg(sub.status)" class="w-10 h-10 rounded-full flex items-center justify-center shrink-0">
-                <svg v-if="sub.status === 'PENDING'" xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 text-yellow-600" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" /></svg>
-                <svg v-else-if="sub.status === 'APPROVED'" xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 text-green-600" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7" /></svg>
-                <svg v-else xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 text-red-600" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" /></svg>
+        <div v-else class="space-y-2.5">
+          <div
+            v-for="sub in displayedSubmissions"
+            :key="sub.id"
+            @click="openDetail(sub)"
+            class="p-3.5 rounded-2xl border border-gray-100 bg-gray-50/60 cursor-pointer hover:bg-blue-50/60 hover:border-primary/20 transition-all duration-200 group flex flex-col gap-3"
+          >
+            <div class="flex items-center justify-between">
+              <div class="flex items-center gap-3 overflow-hidden">
+                <div :class="getStatusIconBg(sub.status)" class="w-10 h-10 rounded-xl flex items-center justify-center shrink-0 shadow-sm">
+                  <svg v-if="sub.status === 'PENDING'" xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 text-amber-600" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" /></svg>
+                  <svg v-else-if="sub.status === 'APPROVED'" xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 text-green-600" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M5 13l4 4L19 7" /></svg>
+                  <svg v-else xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 text-red-500" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M6 18L18 6M6 6l12 12" /></svg>
+                </div>
+                <div class="overflow-hidden">
+                  <p class="text-[11px] font-bold text-gray-400 truncate">{{ sub.grow_id || 'Pengajuan Baru' }}</p>
+                  <p class="text-sm font-black text-gray-800 truncate group-hover:text-primary transition-colors mt-0.5">{{ sub.category_name || 'Memuat...' }}</p>
+                </div>
               </div>
-              <div class="overflow-hidden">
-                <p class="text-sm font-semibold text-gray-800 truncate">{{ sub.grow_id || 'Pengajuan Baru' }}</p>
-                <p class="text-xs text-gray-500 truncate">{{ formatDate(sub.created_at) }}</p>
+              <div class="flex flex-col items-end shrink-0 pl-2">
+                <span :class="getStatusBadgeClass(sub.status)" class="mb-1 text-[10px] px-2 py-0.5 rounded-lg font-black">
+                  {{ sub.status }}
+                </span>
+                <p class="text-[10px] font-bold text-gray-400">{{ formatDate(sub.created_at) }}</p>
               </div>
             </div>
-            <div class="text-right shrink-0">
-              <span :class="getStatusTextColor(sub.status)" class="text-xs font-bold px-2 py-1 rounded-md" :style="{ backgroundColor: getStatusBgColor(sub.status) }">
-                {{ sub.status }}
-              </span>
+            
+            <!-- Alasan Reject -->
+            <div v-if="sub.status === 'REJECTED' && sub.admin_notes && (sub.admin_notes.Valid ? sub.admin_notes.String : sub.admin_notes)" class="bg-red-50 border border-red-100 rounded-xl p-3 flex gap-2 items-start animate-fade-in mt-1">
+              <span class="text-sm">❌</span>
+              <div>
+                <p class="text-[10px] font-black text-red-500 uppercase tracking-wide">Alasan Penolakan</p>
+                <p class="text-xs font-semibold text-red-800 leading-tight mt-0.5">{{ sub.admin_notes.Valid ? sub.admin_notes.String : sub.admin_notes }}</p>
+              </div>
             </div>
           </div>
         </div>
-
       </div>
     </div>
 
     <!-- Detail Modal -->
-    <div v-if="showDetailModal" class="fixed inset-0 z-50 flex items-center justify-center p-4 bg-gray-900/60 backdrop-blur-sm">
-      <div class="bg-white rounded-2xl shadow-xl w-full max-w-2xl max-h-[90vh] flex flex-col overflow-hidden">
-        <div class="px-6 py-4 border-b border-gray-100 flex justify-between items-center bg-gray-50 shrink-0">
-          <h3 class="text-lg font-bold text-gray-900">Detail Pengajuan</h3>
-          <button @click="closeDetailModal" class="text-gray-400 hover:text-gray-600 transition-colors">
-            <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/></svg>
+    <div v-if="showDetailModal" class="fixed inset-0 z-50 flex items-end sm:items-center justify-center p-0 sm:p-4 bg-gray-900/60 backdrop-blur-sm">
+      <div class="bg-white rounded-t-3xl sm:rounded-3xl shadow-2xl w-full max-w-2xl max-h-[90vh] flex flex-col overflow-hidden animate-slide-up">
+        <div class="px-6 py-4 border-b border-gray-100 flex justify-between items-center shrink-0">
+          <h3 class="text-lg font-black text-gray-900">Detail Pengajuan</h3>
+          <button @click="closeDetailModal" class="w-8 h-8 rounded-xl bg-gray-100 hover:bg-gray-200 flex items-center justify-center transition-colors text-gray-500">
+            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M6 18L18 6M6 6l12 12"/></svg>
           </button>
         </div>
 
@@ -150,56 +218,56 @@
             </svg>
           </div>
           
-          <div v-else-if="selectedDetail" class="space-y-6">
+          <div v-else-if="selectedDetail" class="space-y-5">
             <div class="flex items-start justify-between">
               <div>
-                <p class="text-xs text-gray-500 font-medium">GROW ID</p>
-                <p class="text-lg font-bold text-gray-900">{{ selectedDetail.grow_id }}</p>
+                <p class="text-xs text-gray-400 font-bold uppercase tracking-wider">GROW ID</p>
+                <p class="text-xl font-black text-gray-900 mt-0.5">{{ selectedDetail.grow_id }}</p>
               </div>
-              <span :class="getStatusTextColor(selectedDetail.status)" :style="{ backgroundColor: getStatusBgColor(selectedDetail.status) }" class="px-3 py-1 text-xs font-bold rounded-full border">
+              <span :class="getStatusBadgeClass(selectedDetail.status)" class="text-xs font-black px-3 py-1.5 rounded-xl">
                 {{ selectedDetail.status }}
               </span>
             </div>
 
-            <div class="grid grid-cols-2 gap-4">
-              <div class="bg-gray-50 p-3 rounded-lg border border-gray-100" v-if="selectedDetail.category_name !== 'INNOVATION'">
-                <p class="text-xs text-gray-500 mb-1">Aktivitas</p>
-                <p class="text-sm font-semibold text-gray-900">{{ (selectedDetail.activity_name === 'Yang lain (Custom)' && selectedDetail.custom_activity_type?.Valid) ? selectedDetail.custom_activity_type.String : (selectedDetail.activity_name || '-') }}</p>
+            <div class="grid grid-cols-2 gap-3">
+              <div class="bg-gray-50 p-3.5 rounded-2xl border border-gray-100" v-if="selectedDetail.category_name !== 'INNOVATION'">
+                <p class="text-[10px] text-gray-500 font-semibold mb-1">Aktivitas</p>
+                <p class="text-[11px] font-bold text-gray-800 leading-tight break-words">{{ (selectedDetail.activity_name === 'Yang lain (Custom)' && selectedDetail.custom_activity_type?.Valid) ? selectedDetail.custom_activity_type.String : (selectedDetail.activity_name || '-') }}</p>
               </div>
-              <div class="bg-gray-50 p-3 rounded-lg border border-gray-100">
-                <p class="text-xs text-gray-500 mb-1">Kategori</p>
-                <p class="text-sm font-semibold text-gray-900">{{ selectedDetail.category_name || '-' }}</p>
+              <div class="bg-gray-50 p-3.5 rounded-2xl border border-gray-100">
+                <p class="text-[10px] text-gray-500 font-semibold mb-1">Kategori</p>
+                <p class="text-[11px] font-bold text-gray-800 leading-tight break-words">{{ selectedDetail.category_name || '-' }}</p>
               </div>
-              <div class="bg-gray-50 p-3 rounded-lg border border-gray-100">
-                <p class="text-xs text-gray-500 mb-1">Poin</p>
-                <p class="text-sm font-bold text-primary">{{ selectedDetail.points_awarded || '-' }} pts</p>
+              <div class="bg-blue-50 p-3.5 rounded-2xl border border-blue-100">
+                <p class="text-[10px] text-primary/70 font-semibold mb-1">Poin</p>
+                <p class="text-base font-bold text-primary">{{ selectedDetail.points_awarded || '-' }} <span class="text-[10px] font-semibold">pts</span></p>
               </div>
-              <div class="bg-gray-50 p-3 rounded-lg border border-gray-100">
-                <p class="text-xs text-gray-500 mb-1">Tanggal Aktivitas</p>
-                <p class="text-sm font-semibold text-gray-900">{{ formatDate(selectedDetail.activity_date) }}</p>
+              <div class="bg-gray-50 p-3.5 rounded-2xl border border-gray-100">
+                <p class="text-[10px] text-gray-500 font-semibold mb-1">Tanggal</p>
+                <p class="text-[11px] font-bold text-gray-800 leading-tight">{{ formatDate(selectedDetail.activity_date) }}</p>
               </div>
             </div>
 
-            <div v-if="selectedDetail.custom_reference?.Valid" class="bg-gray-50 p-3 rounded-lg border border-gray-100">
-              <p class="text-xs text-gray-500 mb-1">Nama Kegiatan/Aktivitas</p>
-              <p class="text-sm font-medium text-gray-900">{{ selectedDetail.custom_reference.String }}</p>
+            <div v-if="selectedDetail.custom_reference?.Valid" class="bg-gray-50 p-3.5 rounded-2xl border border-gray-100">
+              <p class="text-xs text-gray-400 font-bold mb-1">Nama Kegiatan/Aktivitas</p>
+              <p class="text-sm font-semibold text-gray-900">{{ selectedDetail.custom_reference.String }}</p>
             </div>
 
-            <div v-if="selectedDetail.nomor_ss?.Valid" class="bg-gray-50 p-3 rounded-lg border border-gray-100">
-              <p class="text-xs text-gray-500 mb-1">Nomor SS</p>
-              <p class="text-sm font-bold text-gray-900">{{ selectedDetail.nomor_ss.String }}</p>
+            <div v-if="selectedDetail.nomor_ss?.Valid" class="bg-gray-50 p-3.5 rounded-2xl border border-gray-100">
+              <p class="text-xs text-gray-400 font-bold mb-1">Nomor SS</p>
+              <p class="text-sm font-black text-gray-900">{{ selectedDetail.nomor_ss.String }}</p>
             </div>
 
-            <div v-if="selectedDetail.admin_notes?.Valid" class="bg-yellow-50 p-4 rounded-xl border border-yellow-200">
-              <p class="text-xs font-bold text-yellow-800 mb-1">Catatan Admin:</p>
-              <p class="text-sm text-yellow-700">{{ selectedDetail.admin_notes.String }}</p>
+            <div v-if="selectedDetail.admin_notes?.Valid" class="bg-amber-50 p-4 rounded-2xl border border-amber-200">
+              <p class="text-xs font-black text-amber-700 mb-1.5">⚠️ Catatan Admin</p>
+              <p class="text-sm text-amber-800 font-semibold">{{ selectedDetail.admin_notes.String }}</p>
             </div>
 
             <!-- Evidence Section -->
             <div v-if="selectedDetail.evidence && selectedDetail.evidence.length > 0">
-              <p class="text-sm font-bold text-gray-900 mb-3">Bukti Lampiran</p>
+              <p class="text-sm font-black text-gray-800 mb-3">Bukti Lampiran</p>
               <div class="grid grid-cols-2 gap-3">
-                <a v-for="(ev, idx) in selectedDetail.evidence" :key="idx" :href="ev" target="_blank" class="block group relative rounded-lg overflow-hidden border border-gray-200 bg-gray-50">
+                <a v-for="(ev, idx) in selectedDetail.evidence" :key="idx" :href="ev" target="_blank" class="block group relative rounded-2xl overflow-hidden border border-gray-200 bg-gray-50">
                   <div class="aspect-video w-full">
                     <img :src="ev" class="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300" />
                   </div>
@@ -212,11 +280,11 @@
           </div>
         </div>
         
-        <div class="p-4 border-t border-gray-100 bg-gray-50 shrink-0 flex gap-3">
-          <button v-if="selectedDetail.status === 'REJECTED'" @click="goToRevision" class="flex-1 py-2.5 px-4 bg-primary text-white font-medium rounded-lg hover:bg-blue-700 transition-colors">
+        <div class="p-4 border-t border-gray-100 bg-gray-50/50 shrink-0 flex gap-3">
+          <button v-if="selectedDetail?.status === 'REJECTED'" @click="goToRevision" class="btn-game-primary flex-1 py-3 text-sm">
             Revisi Pengajuan
           </button>
-          <button @click="closeDetailModal" class="flex-1 py-2.5 px-4 bg-white border border-gray-300 text-gray-700 font-medium rounded-lg hover:bg-gray-50 transition-colors">
+          <button @click="closeDetailModal" class="flex-1 py-3 bg-white border-2 border-gray-200 text-gray-700 font-bold rounded-2xl hover:bg-gray-50 transition-colors text-sm">
             Tutup
           </button>
         </div>
@@ -239,8 +307,26 @@ const auth = useAuthStore();
 const balance = ref(0); 
 const rank = ref('-');
 const allSubmissions = ref<any[]>([]);
-const showAll = ref(false); // No longer used but kept to avoid undefined errors if referenced elsewhere
 const isLoading = ref(true);
+
+// Animated balance counter
+const displayBalance = ref(0);
+
+const nextMilestone = computed(() => {
+  const milestones = [50, 100, 200, 300, 500, 750, 1000, 1500, 2000];
+  return milestones.find(m => m > balance.value) || balance.value + 100;
+});
+
+const xpPercent = computed(() => {
+  const prev = (() => {
+    const milestones = [0, 50, 100, 200, 300, 500, 750, 1000, 1500, 2000];
+    const idx = milestones.findIndex(m => m >= nextMilestone.value);
+    return idx > 0 ? milestones[idx - 1] : 0;
+  })();
+  const range = nextMilestone.value - prev;
+  const progress = balance.value - prev;
+  return Math.min(100, Math.round((progress / range) * 100));
+});
 
 const displayedSubmissions = computed(() => {
   return allSubmissions.value.slice(0, 5);
@@ -277,7 +363,15 @@ const goToRevision = () => {
 };
 
 const getInitial = (name: string) => {
+  if (!name) return 'U';
   return name.charAt(0).toUpperCase();
+};
+
+const formatName = (name?: string) => {
+  if (!name) return '';
+  const words = name.trim().split(' ');
+  if (words.length <= 2) return name;
+  return words.slice(0, 2).join(' ') + '...';
 };
 
 const formatDate = (dateString: string) => {
@@ -290,24 +384,32 @@ const getStatusIconBg = (status: string) => {
   switch (status) {
     case 'APPROVED': return 'bg-green-100';
     case 'REJECTED': return 'bg-red-100';
-    default: return 'bg-yellow-100';
+    default: return 'bg-amber-100';
   }
 };
 
-const getStatusTextColor = (status: string) => {
+const getStatusBadgeClass = (status: string) => {
   switch (status) {
-    case 'APPROVED': return 'text-green-700';
-    case 'REJECTED': return 'text-red-700';
-    default: return 'text-yellow-700';
+    case 'APPROVED': return 'badge-approved';
+    case 'REJECTED': return 'badge-rejected';
+    default: return 'badge-pending';
   }
 };
 
-const getStatusBgColor = (status: string) => {
-  switch (status) {
-    case 'APPROVED': return '#dcfce7'; // green-100
-    case 'REJECTED': return '#fee2e2'; // red-100
-    default: return '#fef9c3'; // yellow-100
-  }
+const animateBalance = (target: number) => {
+  const duration = 1000;
+  const step = 16;
+  const increment = target / (duration / step);
+  let current = 0;
+  const timer = setInterval(() => {
+    current += increment;
+    if (current >= target) {
+      displayBalance.value = target;
+      clearInterval(timer);
+    } else {
+      displayBalance.value = Math.floor(current);
+    }
+  }, step);
 };
 
 const fetchDashboardData = async () => {
@@ -318,6 +420,7 @@ const fetchDashboardData = async () => {
       const balRes = await apiClient.get('/leaderboard/my-balance');
       balance.value = balRes.data.balance || 0;
       rank.value = balRes.data.rank || '-';
+      animateBalance(balance.value);
     } catch (err) {
       console.warn("Could not fetch balance", err);
     }

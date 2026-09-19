@@ -1,171 +1,165 @@
 <template>
   <div class="min-h-screen bg-gray-50 pb-12">
-    <!-- Header Image -->
-    <div class="w-full">
-      <img
-        src="/img/header-grow-avi.png"
-        alt="GROW Evidence Form"
-        class="w-full h-auto object-cover"
-      />
+    <!-- Hero Header (menggantikan header image statis) -->
+    <div class="hero-gradient relative overflow-hidden">
+      <div class="absolute inset-0 overflow-hidden pointer-events-none">
+        <div class="absolute -top-10 -right-10 w-48 h-48 rounded-full opacity-10 animate-float" style="background: radial-gradient(circle, #FFA64D, transparent);"></div>
+        <div class="absolute bottom-0 left-1/4 w-32 h-32 rounded-full opacity-10" style="background: radial-gradient(circle, #1CB0F6, transparent);"></div>
+      </div>
+      <div class="px-5 py-10 relative z-10">
+        <button @click="$router.push('/dashboard')" class="flex items-center gap-1.5 text-white/70 text-sm font-bold mb-4 hover:text-white transition-colors">
+          <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M10 19l-7-7m0 0l7-7m-7 7h18" />
+          </svg>
+          Kembali
+        </button>
+        <div class="flex items-center gap-3 mb-2">
+          <div class="w-12 h-12 rounded-2xl glass-card flex items-center justify-center">
+            <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
+            </svg>
+          </div>
+          <div>
+            <h1 class="text-white text-xl font-black leading-tight">GROW Evidence Form</h1>
+            <p class="text-white/60 text-xs font-semibold">Kumpulkan bukti, raih poin!</p>
+          </div>
+        </div>
+      </div>
     </div>
 
     <div class="max-w-md mx-auto px-4 mt-6">
-      <!-- Description Section -->
-      <div
-        class="bg-white rounded-xl shadow-sm p-6 mb-6 border border-gray-100 border-t-8 border-t-primary"
-      >
-        <h1 class="text-2xl font-bold text-gray-900 mb-4">
-          GROW Evidence Form
-        </h1>
-        <p class="text-gray-700 text-sm leading-relaxed mb-4">
-          Formulir ini disusun untuk mendukung proses dokumentasi dan penilaian
-          kegiatan dalam program GROW.
-        </p>
-        <p class="text-gray-700 text-sm leading-relaxed mb-4">
-          Setiap karyawan diminta mengunggah bukti aktivitas sesuai kategori
-          yang tersedia. Penilaian akan dilakukan berdasarkan kelengkapan,
-          relevansi, dan kesesuaian bukti yang diunggah. Harap pastikan seluruh
-          data diisi dengan benar dan setiap file pendukung dapat diakses dengan
-          baik.
-        </p>
-        <p class="text-gray-700 text-sm leading-relaxed font-medium">
-          Siapkan bukti terbaikmu, unggah dengan rapi, dan kumpulkan POIN-mu🚀
-        </p>
-        <p class="text-primary font-bold mt-4 text-lg">#let'sGROW</p>
-        <div
-          class="mt-4 p-3 bg-blue-50 text-primary text-xs rounded-lg font-medium border border-blue-100"
-        >
-          Periode aktivitas mulai dari 1 Januari 2026 sampai 31 Desember 2026
+      <!-- Intro Card (redesign) -->
+      <div class="card-game p-5 mb-5 border-l-4 border-primary">
+        <div class="flex items-start gap-3 mb-4">
+          <div class="w-10 h-10 rounded-xl bg-primary/10 flex items-center justify-center flex-shrink-0">
+            <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 text-primary" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+            </svg>
+          </div>
+          <div>
+            <p class="text-sm font-black text-gray-800">Siapkan bukti terbaikmu! 🚀</p>
+            <p class="text-xs text-gray-500 font-semibold mt-0.5 leading-relaxed">Isi form ini dengan lengkap dan unggah bukti aktivitasmu. Semakin lengkap, semakin besar peluang poinmu disetujui!</p>
+          </div>
         </div>
+        <div class="flex items-center gap-2 bg-primary/5 rounded-xl px-3 py-2.5 border border-primary/10">
+          <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4 text-primary flex-shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" />
+          </svg>
+          <span class="text-xs font-bold text-primary">Periode: 1 Januari 2026 — 31 Desember 2026</span>
+        </div>
+        <p class="text-primary font-black mt-3 text-base">#let'sGROW</p>
       </div>
 
       <!-- Action Buttons -->
-      <div class="grid grid-cols-2 gap-3 mb-6">
+      <div class="grid grid-cols-2 gap-3 mb-5">
         <a
           href="https://heyzine.com/flip-book/a0c4abfab8.html#page/1"
           target="_blank"
           rel="noopener noreferrer"
-          class="flex flex-col items-center justify-center p-3 bg-white rounded-xl shadow-sm border border-gray-100 hover:border-primary transition-colors"
+          class="card-game p-4 flex flex-col items-center justify-center gap-2 group hover:border-primary border-2 border-transparent cursor-pointer"
         >
-          <svg
-            xmlns="http://www.w3.org/2000/svg"
-            class="h-6 w-6 text-primary mb-2"
-            fill="none"
-            viewBox="0 0 24 24"
-            stroke="currentColor"
-          >
-            <path
-              stroke-linecap="round"
-              stroke-linejoin="round"
-              stroke-width="2"
-              d="M12 6.253v13m0-13C10.832 5.477 9.246 5 7.5 5S4.168 5.477 3 6.253v13C4.168 18.477 5.754 18 7.5 18s3.332.477 4.5 1.253m0-13C13.168 5.477 14.754 5 16.5 5c1.747 0 3.332.477 4.5 1.253v13C19.832 18.477 18.247 18 16.5 18c-1.746 0-3.332.477-4.5 1.253"
-            />
-          </svg>
-          <span class="text-xs font-semibold text-gray-800">Guide Book</span>
+          <div class="w-10 h-10 rounded-xl bg-blue-50 flex items-center justify-center group-hover:bg-primary transition-colors">
+            <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 text-primary group-hover:text-white transition-colors" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 6.253v13m0-13C10.832 5.477 9.246 5 7.5 5S4.168 5.477 3 6.253v13C4.168 18.477 5.754 18 7.5 18s3.332.477 4.5 1.253m0-13C13.168 5.477 14.754 5 16.5 5c1.747 0 3.332.477 4.5 1.253v13C19.832 18.477 18.247 18 16.5 18c-1.746 0-3.332.477-4.5 1.253" />
+            </svg>
+          </div>
+          <span class="text-xs font-black text-gray-700 group-hover:text-primary transition-colors">📖 Guide Book</span>
         </a>
         <a
           href="https://datastudio.google.com/embed/u/0/reporting/e32866a0-4028-403f-87aa-d5e2022b9931/page/T2DvF"
           target="_blank"
           rel="noopener noreferrer"
-          class="flex flex-col items-center justify-center p-3 bg-white rounded-xl shadow-sm border border-gray-100 hover:border-secondary transition-colors"
+          class="card-game p-4 flex flex-col items-center justify-center gap-2 group hover:border-secondary border-2 border-transparent cursor-pointer"
         >
-          <svg
-            xmlns="http://www.w3.org/2000/svg"
-            class="h-6 w-6 text-secondary mb-2"
-            fill="none"
-            viewBox="0 0 24 24"
-            stroke="currentColor"
-          >
-            <path
-              stroke-linecap="round"
-              stroke-linejoin="round"
-              stroke-width="2"
-              d="M13 7h8m0 0v8m0-8l-8 8-4-4-6 6"
-            />
-          </svg>
-          <span class="text-xs font-semibold text-gray-800">Leaderboard</span>
+          <div class="w-10 h-10 rounded-xl bg-orange-50 flex items-center justify-center group-hover:bg-secondary transition-colors">
+            <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 text-secondary group-hover:text-white transition-colors" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 7h8m0 0v8m0-8l-8 8-4-4-6 6" />
+            </svg>
+          </div>
+          <span class="text-xs font-black text-gray-700 group-hover:text-secondary transition-colors">📊 Leaderboard</span>
         </a>
       </div>
 
       <!-- Informational Images -->
-      <div class="mb-6 space-y-4">
+      <div class="mb-5 space-y-4">
         <img
           src="/img/rules-grow-avi.png"
           alt="Rules GROW AVI"
-          class="w-full rounded-xl shadow-sm"
+          class="w-full rounded-2xl shadow-sm"
         />
         <img
           src="/img/timestamp-grow-avi.png"
           alt="Timestamp Example"
-          class="w-full rounded-xl shadow-sm"
+          class="w-full rounded-2xl shadow-sm"
         />
       </div>
 
       <form @submit.prevent="submitForm">
-        <!-- User Info Section -->
-        <div
-          class="bg-white rounded-xl shadow-sm p-6 mb-4 border-t-8 border-t-gray-500"
-        >
-          <div class="space-y-4">
+        <!-- Data Diri Section -->
+        <div class="card-game p-6 mb-8 relative overflow-hidden bg-white/90 backdrop-blur-sm">
+          <div class="absolute top-0 right-0 w-32 h-32 bg-blue-100 rounded-full blur-3xl opacity-50 -mr-10 -mt-10 pointer-events-none"></div>
+          <h2 class="text-lg font-black text-gray-900 mb-5 relative z-10 flex items-center gap-2">
+            <span class="text-xl">👤</span> Profil Pengaju
+          </h2>
+          <div class="grid grid-cols-1 md:grid-cols-3 gap-4 relative z-10">
             <div>
-              <label class="block text-sm font-medium text-gray-700 mb-1"
-                >NPK</label
-              >
+              <label class="block text-xs font-bold text-gray-500 mb-1.5 uppercase tracking-wider">NPK</label>
               <input
                 type="text"
                 disabled
                 :value="auth.user?.npk"
-                class="w-full px-4 py-2 rounded-md border border-gray-300 bg-gray-100 text-gray-500 text-sm cursor-not-allowed"
+                class="w-full px-4 py-3 rounded-2xl border-2 border-gray-100 bg-gray-50 text-gray-500 font-bold text-sm cursor-not-allowed"
               />
             </div>
             <div>
-              <label class="block text-sm font-medium text-gray-700 mb-1"
-                >Nama</label
-              >
+              <label class="block text-xs font-bold text-gray-500 mb-1.5 uppercase tracking-wider">Nama</label>
               <input
                 type="text"
                 disabled
                 :value="auth.user?.name || auth.user?.npk"
-                class="w-full px-4 py-2 rounded-md border border-gray-300 bg-gray-100 text-gray-500 text-sm cursor-not-allowed"
+                class="w-full px-4 py-3 rounded-2xl border-2 border-gray-100 bg-gray-50 text-gray-500 font-bold text-sm cursor-not-allowed"
               />
             </div>
             <div>
-              <label class="block text-sm font-medium text-gray-700 mb-1"
-                >Department</label
-              >
+              <label class="block text-xs font-bold text-gray-500 mb-1.5 uppercase tracking-wider">Department</label>
               <input
                 type="text"
                 disabled
                 :value="auth.user?.department || 'TBA'"
-                class="w-full px-4 py-2 rounded-md border border-gray-300 bg-gray-100 text-gray-500 text-sm cursor-not-allowed"
+                class="w-full px-4 py-3 rounded-2xl border-2 border-gray-100 bg-gray-50 text-gray-500 font-bold text-sm cursor-not-allowed"
               />
             </div>
           </div>
         </div>
 
         <!-- Category Section -->
-        <div
-          class="bg-white rounded-xl shadow-sm p-6 mb-4 border border-gray-100"
-        >
-          <label class="block text-base font-medium text-gray-900 mb-4"
-            >Kategori Leaderboard <span class="text-red-500">*</span></label
-          >
-          <div class="space-y-4">
+        <div class="card-game p-6 mb-8 relative bg-white">
+          <label class="block text-lg font-black text-gray-900 mb-5 flex items-center gap-2">
+            <span class="text-xl">🎯</span> Pilih Kategori <span class="text-red-500 text-2xl leading-none">*</span>
+          </label>
+          <div class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-3">
             <label
               v-for="cat in categories"
               :key="cat.id"
-              class="flex items-center space-x-3 cursor-pointer group"
+              class="relative block rounded-2xl border-2 p-4 cursor-pointer transition-all duration-200"
+              :class="form.categoryId === cat.id ? 'border-primary bg-blue-50 ring-2 ring-primary ring-opacity-20 shadow-md translate-y-[-2px]' : 'border-gray-200 bg-white hover:border-blue-300 hover:bg-gray-50 hover:shadow-sm'"
             >
               <input
                 type="radio"
                 v-model="form.categoryId"
                 :value="cat.id"
-                class="h-5 w-5 text-primary border-gray-300 focus:ring-primary cursor-pointer"
+                class="sr-only"
                 required
               />
-              <span class="text-gray-700 group-hover:text-gray-900 text-sm">{{
-                cat.name
-              }}</span>
+              <div class="flex items-center justify-between">
+                <span class="font-bold text-sm" :class="form.categoryId === cat.id ? 'text-primary' : 'text-gray-700'">
+                  {{ cat.name }}
+                </span>
+                <div v-if="form.categoryId === cat.id" class="w-5 h-5 rounded-full bg-primary text-white flex items-center justify-center">
+                  <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="3" d="M5 13l4 4L19 7"></path></svg>
+                </div>
+                <div v-else class="w-5 h-5 rounded-full border-2 border-gray-300"></div>
+              </div>
             </label>
           </div>
         </div>
@@ -173,60 +167,75 @@
         <!-- Activity Section -->
         <div
           v-if="form.categoryId"
-          class="bg-white rounded-xl shadow-sm p-6 mb-4 border border-gray-100"
+          class="card-game p-6 mb-8 relative bg-white animate-slide-up"
         >
-          <div class="mb-2">
-            <label class="block text-base font-medium text-gray-900"
-              >Kegiatan atau Aktivitas
-              <span class="text-red-500">*</span></label
-            >
-            <p v-if="form.categoryId === 6" class="text-xs text-gray-500 mt-1">
-              Untuk kegiatan SPORT dll, harus sudah disetujui oleh Perusahaan
-            </p>
+          <div class="mb-5">
+            <label class="block text-lg font-black text-gray-900 flex items-center gap-2">
+              <span class="text-xl">🏃‍♂️</span> Kegiatan atau Aktivitas <span class="text-red-500 text-2xl leading-none">*</span>
+            </label>
+            <div v-if="form.categoryId === 6" class="mt-2 inline-flex items-center gap-1.5 px-3 py-1.5 bg-amber-50 border border-amber-200 rounded-lg text-amber-800 text-xs font-bold">
+              <span>⚠️</span> Untuk kegiatan SPORT dll, harus sudah disetujui oleh Perusahaan
+            </div>
           </div>
 
-          <div class="space-y-4 mt-4">
+          <div class="grid grid-cols-1 sm:grid-cols-2 gap-3 mt-4">
             <template v-for="act in filteredActivities" :key="act.id">
               <label
                 v-if="!act.is_custom_input"
-                class="flex items-center space-x-3 cursor-pointer group"
+                class="relative block rounded-2xl border-2 p-4 cursor-pointer transition-all duration-200"
+                :class="form.activityId === act.id ? 'border-primary bg-blue-50 ring-2 ring-primary ring-opacity-20 shadow-md translate-y-[-2px]' : 'border-gray-200 bg-white hover:border-blue-300 hover:bg-gray-50'"
               >
                 <input
                   type="radio"
                   v-model="form.activityId"
                   :value="act.id"
-                  class="h-5 w-5 text-primary border-gray-300 focus:ring-primary cursor-pointer"
+                  class="sr-only"
                   required
                 />
-                <span class="text-gray-700 group-hover:text-gray-900 text-sm">{{
-                  act.name
-                }}</span>
+                <div class="flex items-start">
+                  <div class="flex-1 pr-3">
+                    <span class="font-bold text-sm block" :class="form.activityId === act.id ? 'text-primary' : 'text-gray-700'">
+                      {{ act.name }}
+                    </span>
+                  </div>
+                  <div v-if="form.activityId === act.id" class="w-5 h-5 rounded-full bg-primary text-white flex items-center justify-center shrink-0 mt-0.5">
+                    <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="3" d="M5 13l4 4L19 7"></path></svg>
+                  </div>
+                  <div v-else class="w-5 h-5 rounded-full border-2 border-gray-300 shrink-0 mt-0.5"></div>
+                </div>
               </label>
 
               <!-- Yang lain option -->
               <label
                 v-else
-                class="flex items-center space-x-3 cursor-pointer group"
+                class="relative block rounded-2xl border-2 p-4 cursor-pointer transition-all duration-200 sm:col-span-2"
+                :class="form.activityId === act.id ? 'border-primary bg-blue-50 ring-2 ring-primary ring-opacity-20 shadow-md' : 'border-gray-200 bg-white hover:border-blue-300 hover:bg-gray-50'"
               >
                 <input
                   type="radio"
                   v-model="form.activityId"
                   :value="act.id"
-                  class="h-5 w-5 text-primary border-gray-300 focus:ring-primary cursor-pointer"
+                  class="sr-only"
                   required
                 />
-                <div class="flex items-center w-full">
-                  <span class="text-gray-700 text-sm whitespace-nowrap mr-2"
-                    >{{ act.name }}:</span
-                  >
-                  <input
-                    type="text"
-                    v-model="form.customActivityType"
-                    :disabled="form.activityId !== act.id"
-                    :required="form.activityId === act.id"
-                    class="w-full border-b border-gray-300 focus:border-primary focus:outline-none bg-transparent px-1 py-0.5 text-sm transition-colors disabled:opacity-50"
-                    placeholder="Sebutkan..."
-                  />
+                <div class="flex items-start">
+                  <div class="flex-1 pr-3 flex flex-col xs:flex-row xs:items-center gap-3">
+                    <span class="font-bold text-sm whitespace-nowrap shrink-0 mt-2 xs:mt-0" :class="form.activityId === act.id ? 'text-primary' : 'text-gray-700'">
+                      {{ act.name }}:
+                    </span>
+                    <input
+                      type="text"
+                      v-model="form.customActivityType"
+                      :disabled="form.activityId !== act.id"
+                      :required="form.activityId === act.id"
+                      class="flex-1 w-full border-2 border-gray-200 rounded-xl focus:border-primary focus:ring-2 focus:ring-primary/20 bg-white px-3 py-2 text-sm font-semibold transition-all disabled:opacity-50 disabled:bg-gray-100"
+                      placeholder="Sebutkan kegiatan..."
+                    />
+                  </div>
+                  <div v-if="form.activityId === act.id" class="w-5 h-5 rounded-full bg-primary text-white flex items-center justify-center shrink-0 mt-2.5 xs:mt-1.5">
+                    <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="3" d="M5 13l4 4L19 7"></path></svg>
+                  </div>
+                  <div v-else class="w-5 h-5 rounded-full border-2 border-gray-300 shrink-0 mt-2.5 xs:mt-1.5"></div>
                 </div>
               </label>
             </template>
@@ -235,135 +244,107 @@
 
         <!-- Details & Evidence Section -->
         <div
-          class="bg-white rounded-xl shadow-sm p-6 mb-6 border border-gray-100"
+          class="card-game p-6 mb-8 relative bg-white"
         >
-          <!-- Nama Kegiatan / Aktivitas -->
-          <div class="mb-5" v-if="form.categoryId !== 8 && !isSubmitSS">
-            <label class="block text-sm font-medium text-gray-900 mb-2"
-              >Nama Kegiatan/Aktivitas
-              <span class="text-red-500">*</span></label
-            >
-            <input
-              type="text"
-              v-model="form.customActivityName"
-              required
-              placeholder="Contoh: Lari Pagi 5KM"
-              class="w-full px-4 py-2.5 rounded-md border border-gray-300 focus:ring-2 focus:ring-primary focus:border-primary outline-none transition-all text-sm"
-            />
-          </div>
+          <label class="block text-lg font-black text-gray-900 mb-6 flex items-center gap-2">
+            <span class="text-xl">📝</span> Detail & Lampiran
+          </label>
 
-          <!-- Activity Date -->
-          <div class="mb-5" v-if="!isSubmitSS">
-            <label class="block text-sm font-medium text-gray-900 mb-2"
-              >Tanggal Aktivitas <span class="text-red-500">*</span></label
-            >
-            <input
-              type="date"
-              v-model="form.activityDate"
-              required
-              class="w-full px-4 py-2.5 rounded-md border border-gray-300 focus:ring-2 focus:ring-primary focus:border-primary outline-none transition-all text-sm"
-            />
-          </div>
-
-          <!-- Custom Reference (Only for SS / Innovation) -->
-          <div class="mb-5" v-if="isSubmitSS">
-            <label class="block text-sm font-medium text-gray-900 mb-2"
-              >Nomor SS / Referensi <span class="text-red-500">*</span></label
-            >
-            <input
-              type="text"
-              v-model="form.customReference"
-              :required="isSubmitSS"
-              placeholder="Contoh: SS-2026-001"
-              class="w-full px-4 py-2.5 rounded-md border border-gray-300 focus:ring-2 focus:ring-primary focus:border-primary outline-none transition-all text-sm"
-            />
-          </div>
-
-          <!-- Evidence Upload -->
-          <div v-if="!isSubmitSS">
-            <label class="block text-sm font-medium text-gray-900 mb-2"
-              >Lampiran File Pendukung
-              <span class="text-red-500">*</span></label
-            >
-            <div
-              class="mt-1 flex justify-center px-6 pt-5 pb-6 border-2 border-gray-300 border-dashed rounded-lg hover:border-primary transition-colors cursor-pointer bg-gray-50"
-              @click="triggerFileInput"
-            >
-              <div class="space-y-1 text-center">
-                <svg
-                  class="mx-auto h-10 w-10 text-gray-400"
-                  stroke="currentColor"
-                  fill="none"
-                  viewBox="0 0 48 48"
-                  aria-hidden="true"
-                >
-                  <path
-                    d="M28 8H12a4 4 0 00-4 4v20m32-12v8m0 0v8a4 4 0 01-4 4H12a4 4 0 01-4-4v-4m32-4l-3.172-3.172a4 4 0 00-5.656 0L28 28M8 32l9.172-9.172a4 4 0 015.656 0L28 28m0 0l4 4m4-24h8m-4-4v8m-12 4h.02"
-                    stroke-width="2"
-                    stroke-linecap="round"
-                    stroke-linejoin="round"
-                  />
-                </svg>
-                <div class="flex text-sm text-gray-600 justify-center">
-                  <label
-                    for="file-upload"
-                    class="relative cursor-pointer rounded-md font-medium text-primary hover:text-blue-800 focus-within:outline-none focus-within:ring-2 focus-within:ring-offset-2 focus-within:ring-primary"
-                  >
-                    <span>Tambahkan File</span>
-                    <input
-                      id="file-upload"
-                      name="file-upload"
-                      type="file"
-                      class="sr-only"
-                      multiple
-                      accept=".jpg,.jpeg,.png,.webp"
-                      @change="handleFileUpload"
-                      ref="fileInput"
-                    />
-                  </label>
-                </div>
-                <p class="text-xs text-gray-500">Maks 5 file, < 10MB</p>
-              </div>
+          <div class="space-y-6">
+            <!-- Nama Kegiatan / Aktivitas -->
+            <div v-if="form.categoryId !== 8 && !isSubmitSS">
+              <label class="block text-sm font-bold text-gray-700 mb-2">
+                Nama Kegiatan/Aktivitas <span class="text-red-500">*</span>
+              </label>
+              <input
+                type="text"
+                v-model="form.customActivityName"
+                required
+                placeholder="Contoh: Lari Pagi 5KM"
+                class="w-full px-4 py-3.5 rounded-2xl border-2 border-gray-200 bg-gray-50 focus:bg-white focus:ring-4 focus:ring-primary/10 focus:border-primary font-semibold outline-none transition-all text-sm placeholder-gray-400"
+              />
             </div>
 
-            <!-- File Preview List -->
-            <div v-if="files.length > 0" class="mt-4 space-y-2">
+            <!-- Activity Date -->
+            <div v-if="!isSubmitSS">
+              <label class="block text-sm font-bold text-gray-700 mb-2">
+                Tanggal Aktivitas <span class="text-red-500">*</span>
+              </label>
+              <input
+                type="date"
+                v-model="form.activityDate"
+                required
+                class="w-full px-4 py-3.5 rounded-2xl border-2 border-gray-200 bg-gray-50 focus:bg-white focus:ring-4 focus:ring-primary/10 focus:border-primary font-semibold outline-none transition-all text-sm"
+              />
+            </div>
+
+            <!-- Custom Reference (Only for SS / Innovation) -->
+            <div v-if="isSubmitSS">
+              <label class="block text-sm font-bold text-gray-700 mb-2">
+                Nomor SS / Referensi <span class="text-red-500">*</span>
+              </label>
+              <input
+                type="text"
+                v-model="form.customReference"
+                :required="isSubmitSS"
+                placeholder="Contoh: SS-2026-001"
+                class="w-full px-4 py-3.5 rounded-2xl border-2 border-gray-200 bg-gray-50 focus:bg-white focus:ring-4 focus:ring-primary/10 focus:border-primary font-semibold outline-none transition-all text-sm placeholder-gray-400"
+              />
+            </div>
+
+            <!-- Evidence Upload -->
+            <div v-if="!isSubmitSS">
+              <label class="block text-sm font-bold text-gray-700 mb-2">
+                Lampiran File Pendukung <span class="text-red-500">*</span>
+              </label>
               <div
-                v-for="(file, index) in files"
-                :key="index"
-                class="flex items-center justify-between p-3 bg-gray-50 rounded-lg border border-gray-200"
+                class="mt-1 flex flex-col items-center justify-center px-6 py-8 border-2 border-gray-300 border-dashed rounded-3xl hover:border-primary hover:bg-blue-50 transition-all cursor-pointer bg-gray-50 group"
+                @click="triggerFileInput"
               >
-                <div class="flex items-center space-x-3 overflow-hidden">
-                  <div
-                    class="w-10 h-10 rounded bg-gray-200 flex-shrink-0 overflow-hidden"
-                  >
-                    <img
-                      :src="file.preview"
-                      class="w-full h-full object-cover"
-                    />
-                  </div>
-                  <span class="text-sm text-gray-700 truncate">{{
-                    file.name
-                  }}</span>
-                </div>
-                <button
-                  type="button"
-                  @click.stop="removeFile(index)"
-                  class="text-red-500 hover:text-red-700 p-1"
-                >
-                  <svg
-                    xmlns="http://www.w3.org/2000/svg"
-                    class="h-5 w-5"
-                    viewBox="0 0 20 20"
-                    fill="currentColor"
-                  >
-                    <path
-                      fill-rule="evenodd"
-                      d="M4.293 4.293a1 1 0 011.414 0L10 8.586l4.293-4.293a1 1 0 111.414 1.414L11.414 10l4.293 4.293a1 1 0 01-1.414 1.414L10 11.414l-4.293 4.293a1 1 0 01-1.414-1.414L8.586 10 4.293 5.707a1 1 0 010-1.414z"
-                      clip-rule="evenodd"
-                    />
+                <div class="w-14 h-14 rounded-full bg-blue-100 flex items-center justify-center mb-3 group-hover:scale-110 transition-transform duration-300">
+                  <svg class="h-7 w-7 text-primary" stroke="currentColor" fill="none" viewBox="0 0 48 48" aria-hidden="true">
+                    <path d="M28 8H12a4 4 0 00-4 4v20m32-12v8m0 0v8a4 4 0 01-4 4H12a4 4 0 01-4-4v-4m32-4l-3.172-3.172a4 4 0 00-5.656 0L28 28M8 32l9.172-9.172a4 4 0 015.656 0L28 28m0 0l4 4m4-24h8m-4-4v8m-12 4h.02" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"/>
                   </svg>
-                </button>
+                </div>
+                <div class="text-center">
+                  <span class="text-sm font-bold text-primary">Klik untuk memilih file</span>
+                  <p class="text-xs text-gray-500 font-medium mt-1">Maksimal 5 file, (Format: JPG, PNG, WEBP), < 10MB</p>
+                </div>
+                <input
+                  id="file-upload"
+                  name="file-upload"
+                  type="file"
+                  class="sr-only"
+                  multiple
+                  accept=".jpg,.jpeg,.png,.webp"
+                  @change="handleFileUpload"
+                  ref="fileInput"
+                />
+              </div>
+
+              <!-- File Preview List -->
+              <div v-if="files.length > 0" class="mt-4 grid grid-cols-1 sm:grid-cols-2 gap-3">
+                <div
+                  v-for="(file, index) in files"
+                  :key="index"
+                  class="flex items-center justify-between p-2.5 bg-white rounded-2xl border-2 border-gray-100 shadow-sm animate-pop"
+                >
+                  <div class="flex items-center space-x-3 overflow-hidden">
+                    <div class="w-12 h-12 rounded-xl bg-gray-100 flex-shrink-0 overflow-hidden border border-gray-200">
+                      <img :src="file.preview" class="w-full h-full object-cover" />
+                    </div>
+                    <span class="text-sm font-semibold text-gray-700 truncate max-w-[120px]">{{ file.name }}</span>
+                  </div>
+                  <button
+                    type="button"
+                    @click.stop="removeFile(index)"
+                    class="w-8 h-8 rounded-full bg-red-50 text-red-500 flex items-center justify-center hover:bg-red-500 hover:text-white transition-colors flex-shrink-0 mr-1"
+                  >
+                    <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" viewBox="0 0 20 20" fill="currentColor">
+                      <path fill-rule="evenodd" d="M4.293 4.293a1 1 0 011.414 0L10 8.586l4.293-4.293a1 1 0 111.414 1.414L11.414 10l4.293 4.293a1 1 0 01-1.414 1.414L10 11.414l-4.293 4.293a1 1 0 01-1.414-1.414L8.586 10 4.293 5.707a1 1 0 010-1.414z" clip-rule="evenodd" />
+                    </svg>
+                  </button>
+                </div>
               </div>
             </div>
           </div>
@@ -372,14 +353,20 @@
 
 
         <!-- Submit Button -->
-        <div class="flex justify-end items-center bg-gray-100 p-4 rounded-xl">
+        <div class="pb-10">
           <button
             type="submit"
             :disabled="isSubmitting"
-            class="flex justify-center py-2 px-6 border border-transparent rounded-md shadow-sm text-sm font-medium text-white bg-primary hover:bg-blue-800 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-primary transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+            class="btn-game-primary w-full py-4 text-lg font-black rounded-2xl flex items-center justify-center gap-2"
           >
-            <span v-if="isSubmitting">Mengirim...</span>
-            <span v-else>Kirim</span>
+            <span v-if="isSubmitting" class="flex items-center gap-2">
+              <svg class="animate-spin h-5 w-5 text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
+                <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+              </svg>
+              Memproses Pengajuan...
+            </span>
+            <span v-else>🚀 Kirim Pengajuan</span>
           </button>
         </div>
       </form>

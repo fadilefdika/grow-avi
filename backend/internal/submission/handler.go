@@ -18,8 +18,9 @@ import (
 	"strings"
 	"time"
 
-	"github.com/gin-gonic/gin"
 	"grow-point/internal/utils"
+
+	"github.com/gin-gonic/gin"
 )
 
 type SubmissionHandler struct {
@@ -43,7 +44,7 @@ type CreateSubmissionRequest struct {
 // generateGrowID generates a unique GROW ID: GY + YY + 3-digit sequence
 func (h *SubmissionHandler) generateGrowID() (string, error) {
 	dateStr := time.Now().Format("06")
-	prefix := "GY" + dateStr
+	prefix := "GR" + dateStr
 	var seq int
 	err := h.db.QueryRow(
 		"SELECT COUNT(*) FROM activity_submissions WHERE grow_id LIKE @p1",
@@ -430,7 +431,7 @@ func (h *SubmissionHandler) GetSubmissionDetail(c *gin.Context) {
 		for evRows.Next() {
 			var fp string
 			evRows.Scan(&fp)
-			fp = strings.TrimPrefix(fp, "/") // Ensure no leading slash first
+			fp = strings.TrimPrefix(fp, "/")            // Ensure no leading slash first
 			det.Evidence = append(det.Evidence, "/"+fp) // Then prepend exactly one slash
 		}
 	}
@@ -510,11 +511,11 @@ func (h *SubmissionHandler) PendingQueue(c *gin.Context) {
 	defer rows.Close()
 
 	type PendingItem struct {
-		ID              int64          `json:"id"`
-		GrowID          string         `json:"grow_id"`
-		NPK             string         `json:"npk"`
-		UserName        string         `json:"user_name"`
-		Department      string         `json:"department"`
+		ID                 int64          `json:"id"`
+		GrowID             string         `json:"grow_id"`
+		NPK                string         `json:"npk"`
+		UserName           string         `json:"user_name"`
+		Department         string         `json:"department"`
 		ActivityName       string         `json:"activity_name"`
 		CategoryName       string         `json:"category_name"`
 		DefaultPoints      int            `json:"default_points"`
@@ -903,11 +904,11 @@ func (h *SubmissionHandler) ActivityLog(c *gin.Context) {
 		var item ActivityLogItem
 		if err := rows.Scan(
 			&item.ID,
-			&item.GrowID, 
-			&item.NPK, 
-			&item.UserName, 
-			&item.ActivityType, 
-			&item.Points, 
+			&item.GrowID,
+			&item.NPK,
+			&item.UserName,
+			&item.ActivityType,
+			&item.Points,
 			&item.ActivityDate,
 			&item.SourceTable,
 		); err != nil {

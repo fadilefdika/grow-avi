@@ -7,7 +7,7 @@
     <div class="flex-1 p-8 overflow-auto h-screen">
       <div class="flex justify-between items-center mb-8">
         <div>
-          <h1 class="text-2xl font-bold text-gray-900">Admin Dashboard</h1>
+          <h1 class="text-2xl font-bold text-gray-900">Dasbor Admin</h1>
           <p class="text-gray-500 mt-1">Selamat datang,  Admin</p>
         </div>
       </div>
@@ -57,7 +57,7 @@
 
       <div class="bg-white rounded-xl shadow-sm border border-gray-100 overflow-hidden">
         <div class="px-6 py-4 border-b border-gray-100 bg-gray-50 flex justify-between items-center">
-          <h2 class="text-lg font-bold text-gray-800">Top 5 Karyawan</h2>
+          <h2 class="text-lg font-bold text-gray-800">5 Karyawan Teratas</h2>
           <router-link to="/admin/leaderboard" class="text-sm text-primary font-medium hover:underline">Lihat Lengkap</router-link>
         </div>
         <div v-if="isLoading" class="p-8 text-center text-gray-500">Memuat data...</div>
@@ -72,7 +72,7 @@
               </div>
             </div>
             <div class="text-right">
-              <span class="text-lg font-bold text-primary">{{ user.balance }} pts</span>
+              <span class="text-lg font-bold text-primary">{{ user.balance }} poin</span>
             </div>
           </li>
         </ul>

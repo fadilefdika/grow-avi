@@ -1,9 +1,123 @@
+@import url('https://fonts.googleapis.com/css2?family=Nunito:wght@400;600;700;800;900&family=Inter:wght@400;500;600;700&display=swap');
+
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
 
 @layer base {
   body {
-    @apply bg-gray-50 text-gray-900 font-sans;
+    @apply bg-gray-50 text-gray-900;
+    font-family: 'Nunito', 'Inter', sans-serif;
+  }
+}
+
+@layer components {
+  /* Gamification button */
+  .btn-game {
+    @apply relative inline-flex items-center justify-center px-6 py-3 font-bold text-white rounded-2xl transition-all duration-200 active:scale-95 select-none;
+    box-shadow: 0 6px 0 rgba(0,0,0,0.2);
+  }
+  .btn-game:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 8px 0 rgba(0,0,0,0.2);
+  }
+  .btn-game:active {
+    transform: translateY(3px);
+    box-shadow: 0 3px 0 rgba(0,0,0,0.2);
+  }
+  .btn-game-primary {
+    @apply btn-game bg-primary;
+    box-shadow: 0 6px 0 #004f82;
+  }
+  .btn-game-primary:hover {
+    box-shadow: 0 8px 0 #004f82;
+  }
+  .btn-game-primary:active {
+    box-shadow: 0 3px 0 #004f82;
+  }
+  .btn-game-orange {
+    @apply btn-game bg-secondary;
+    box-shadow: 0 6px 0 #cc7a2a;
+  }
+  .btn-game-orange:hover {
+    box-shadow: 0 8px 0 #cc7a2a;
+  }
+  .btn-game-orange:active {
+    box-shadow: 0 3px 0 #cc7a2a;
+  }
+
+  /* Gamification card */
+  .card-game {
+    @apply bg-white rounded-2xl shadow-md border border-gray-100 transition-all duration-300;
+  }
+  .card-game:hover {
+    @apply shadow-lg;
+    transform: translateY(-2px);
+  }
+
+  /* XP Bar */
+  .xp-bar-track {
+    @apply w-full h-3 bg-gray-100 rounded-full overflow-hidden;
+  }
+  .xp-bar-fill {
+    @apply h-full rounded-full bg-xp-green transition-all duration-700 ease-out;
+    background: linear-gradient(90deg, #58CC02, #89E219);
+  }
+
+  /* Shimmer loading / highlight card */
+  .shimmer-card {
+    background: linear-gradient(90deg, #f0f0f0 25%, #e0e0e0 50%, #f0f0f0 75%);
+    background-size: 200% 100%;
+    animation: shimmer 1.5s infinite;
+  }
+
+  /* Active/eligible card glow */
+  .card-eligible {
+    border: 2px solid #58CC02;
+    box-shadow: 0 0 0 3px rgba(88,204,2,0.15);
+  }
+
+  /* Rank glow for current user */
+  .rank-glow {
+    background: linear-gradient(135deg, rgba(0,105,170,0.06), rgba(28,176,246,0.06));
+    border: 1.5px solid rgba(0,105,170,0.3);
+    box-shadow: 0 0 12px rgba(0,105,170,0.15);
+  }
+
+  /* Podium styles */
+  .podium-gold {
+    background: linear-gradient(135deg, #FFF8DC, #FFE066);
+    border: 2px solid #FFD700;
+  }
+  .podium-silver {
+    background: linear-gradient(135deg, #F5F5F5, #D8D8D8);
+    border: 2px solid #C0C0C0;
+  }
+  .podium-bronze {
+    background: linear-gradient(135deg, #FFF0E0, #E8A87C);
+    border: 2px solid #CD7F32;
+  }
+
+  /* Badge styles */
+  .badge-approved {
+    @apply inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-xs font-bold bg-green-100 text-green-700;
+  }
+  .badge-pending {
+    @apply inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-xs font-bold bg-amber-100 text-amber-700;
+  }
+  .badge-rejected {
+    @apply inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-xs font-bold bg-red-100 text-red-700;
+  }
+
+  /* Hero gradient background */
+  .hero-gradient {
+    background: linear-gradient(135deg, #004f82 0%, #0069AA 40%, #0090d4 100%);
+  }
+
+  /* Glass card */
+  .glass-card {
+    background: rgba(255, 255, 255, 0.15);
+    backdrop-filter: blur(10px);
+    border: 1px solid rgba(255, 255, 255, 0.25);
   }
 }

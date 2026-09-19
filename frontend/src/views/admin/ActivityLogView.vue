@@ -21,14 +21,19 @@
             <input type="text" v-model="filterParams.search" placeholder="Cari..." class="w-full px-3 py-1.5 text-sm bg-gray-50 border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary focus:bg-white transition-colors" @input="onSearchInput" />
           </div>
           
-          <div>
+          <div class="relative min-w-[200px]">
             <label class="block text-[11px] font-semibold text-gray-500 uppercase tracking-wider mb-1.5">Jenis Kegiatan</label>
-            <select v-model="filterParams.type" class="w-full px-3 py-1.5 text-sm bg-gray-50 border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary focus:bg-white transition-colors" @change="applyFilter">
-              <option value="">Semua Jenis</option>
-              <option value="APPROVED">Approval Poin</option>
-              <option value="REJECTED">Penolakan (Reject)</option>
-              <option value="REDEEM">Klaim Poin (Redeem)</option>
-            </select>
+            <button @click.stop="toggleTypeDropdown" class="w-full text-left bg-gray-50 border border-gray-200 text-gray-700 rounded-lg px-3 py-1.5 text-sm flex justify-between items-center transition-colors hover:border-primary/50" :class="{'border-primary': showTypeDropdown}">
+              <span class="truncate pr-2">{{ getTypeName(filterParams.type) }}</span>
+              <svg class="w-4 h-4 text-gray-400 shrink-0 transition-transform" :class="{'rotate-180': showTypeDropdown}" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"></path></svg>
+            </button>
+            
+            <div v-if="showTypeDropdown" class="absolute z-50 w-full mt-2 bg-white border border-gray-100 rounded-xl shadow-xl max-h-60 overflow-y-auto p-1">
+              <div @click="selectType('')" class="px-3 py-2 text-sm font-medium rounded-lg hover:bg-blue-50 cursor-pointer transition-colors" :class="!filterParams.type ? 'text-primary bg-blue-50' : 'text-gray-600'">Semua Jenis</div>
+              <div @click="selectType('APPROVED')" class="px-3 py-2 text-sm font-medium rounded-lg hover:bg-blue-50 cursor-pointer transition-colors" :class="filterParams.type === 'APPROVED' ? 'text-primary bg-blue-50' : 'text-gray-600'">Approval Poin</div>
+              <div @click="selectType('REJECTED')" class="px-3 py-2 text-sm font-medium rounded-lg hover:bg-blue-50 cursor-pointer transition-colors" :class="filterParams.type === 'REJECTED' ? 'text-primary bg-blue-50' : 'text-gray-600'">Penolakan</div>
+              <div @click="selectType('REDEEM')" class="px-3 py-2 text-sm font-medium rounded-lg hover:bg-blue-50 cursor-pointer transition-colors" :class="filterParams.type === 'REDEEM' ? 'text-primary bg-blue-50' : 'text-gray-600'">Klaim Poin (Redeem)</div>
+            </div>
           </div>
           
           <div>
@@ -246,6 +251,34 @@ let tableParams = {
   sort: 'activity_date',
   order: 'desc'
 };
+
+const showTypeDropdown = ref(false);
+
+const toggleTypeDropdown = () => {
+  showTypeDropdown.value = !showTypeDropdown.value;
+};
+
+const selectType = (type: string) => {
+  filterParams.value.type = type;
+  showTypeDropdown.value = false;
+  applyFilter();
+};
+
+const getTypeName = (type: string) => {
+  if (type === 'APPROVED') return 'Approval Poin';
+  if (type === 'REJECTED') return 'Penolakan';
+  if (type === 'REDEEM') return 'Klaim Poin (Redeem)';
+  return 'Semua Jenis';
+};
+
+if (typeof window !== 'undefined') {
+  window.addEventListener('click', (e) => {
+    const target = e.target as HTMLElement;
+    if (!target.closest('.relative')) {
+      showTypeDropdown.value = false;
+    }
+  });
+}
 
 const fetchLogs = async () => {
   isLoading.value = true;

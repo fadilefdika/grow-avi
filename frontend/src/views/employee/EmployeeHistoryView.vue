@@ -1,47 +1,55 @@
 <template>
-  <div class="min-h-screen bg-gray-50 pb-20">
-    <!-- Top Header -->
-    <div class="bg-primary pt-12 pb-16 px-6 rounded-b-[2rem] shadow-md relative">
-      <div class="flex items-center gap-4 relative z-10">
-        <button @click="$router.push('/dashboard')" class="w-10 h-10 rounded-full bg-white/10 hover:bg-white/20 flex items-center justify-center transition-colors text-white border border-white/20">
+  <div class="min-h-screen bg-gray-50 pb-24">
+    <!-- Hero Header -->
+    <div class="hero-gradient pt-12 pb-28 px-6 relative overflow-hidden">
+      <div class="absolute inset-0 overflow-hidden pointer-events-none">
+        <div class="absolute -top-8 -right-8 w-40 h-40 rounded-full opacity-10 animate-float" style="background: radial-gradient(circle, #1CB0F6, transparent);"></div>
+        <div class="absolute top-20 -left-6 w-28 h-28 rounded-full opacity-10 animate-float" style="background: radial-gradient(circle, #FFA64D, transparent); animation-delay: 1s;"></div>
+      </div>
+      <div class="flex items-start gap-4 relative z-10">
+        <button @click="$router.push('/dashboard')" class="w-10 h-10 rounded-xl glass-card flex items-center justify-center text-white hover:bg-white/25 transition-all mt-0.5 flex-shrink-0">
           <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 19l-7-7 7-7" />
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M15 19l-7-7 7-7" />
           </svg>
         </button>
         <div>
-          <h1 class="text-white text-xl font-bold">Riwayat Pengajuan</h1>
-          <p class="text-white/80 text-xs mt-0.5">Semua data riwayat pengajuan poin Anda</p>
+          <h1 class="text-white text-2xl font-black">📋 Riwayat Pengajuan</h1>
+          <p class="text-white/60 text-xs font-semibold mt-0.5">Pantau semua perkembangan pengajuanmu</p>
         </div>
       </div>
     </div>
 
     <!-- Main Content -->
-    <div class="px-4 -mt-8 relative z-20 space-y-4">
-      
+    <div class="px-4 -mt-20 relative z-20 space-y-4">
+
       <!-- Filter Card -->
-      <div class="bg-white rounded-2xl p-4 shadow-sm border border-gray-100 flex flex-col gap-3">
+      <div class="bg-white rounded-2xl p-4 shadow-sm border border-gray-100">
         <div class="flex gap-2">
           <div class="flex-1 relative">
-            <input 
-              v-model="searchQuery" 
-              type="text" 
-              placeholder="Cari GROW ID..." 
-              class="w-full pl-9 pr-3 py-2 bg-gray-50 border border-gray-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-primary focus:bg-white transition-colors"
+            <input
+              v-model="searchQuery"
+              type="text"
+              placeholder="Cari GROW ID..."
+              class="w-full pl-9 pr-3 py-2.5 bg-gray-50 border-2 border-gray-200 rounded-xl text-sm font-semibold focus:outline-none focus:border-primary focus:bg-white transition-colors placeholder-gray-300"
               @input="onSearch"
             />
-            <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4 text-gray-400 absolute left-3 top-2.5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+            <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4 text-gray-400 absolute left-3 top-3" fill="none" viewBox="0 0 24 24" stroke="currentColor">
               <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
             </svg>
           </div>
-          <select v-model="selectedCategory" @change="fetchHistory(1)" class="w-32 px-2 py-2 bg-gray-50 border border-gray-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-primary focus:bg-white transition-colors">
-            <option value="">Semua Kategori</option>
+          <select
+            v-model="selectedCategory"
+            @change="fetchHistory(1)"
+            class="w-32 px-2 py-2.5 bg-gray-50 border-2 border-gray-200 rounded-xl text-sm font-semibold focus:outline-none focus:border-primary focus:bg-white transition-colors"
+          >
+            <option value="">Semua</option>
             <option v-for="cat in categories" :key="cat.id" :value="cat.id">{{ cat.name }}</option>
           </select>
         </div>
       </div>
 
       <!-- List Content -->
-      <div class="bg-white rounded-2xl p-4 shadow-sm border border-gray-100 min-h-[400px]">
+      <div class="bg-white rounded-2xl shadow-sm border border-gray-100 overflow-hidden">
         <div v-if="isLoading" class="flex justify-center py-12">
           <svg class="animate-spin h-8 w-8 text-primary" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
             <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
@@ -49,70 +57,96 @@
           </svg>
         </div>
         
-        <div v-else-if="submissions.length === 0" class="text-center py-12">
-          <div class="w-16 h-16 bg-gray-50 rounded-full flex items-center justify-center mx-auto mb-3">
-            <svg xmlns="http://www.w3.org/2000/svg" class="h-8 w-8 text-gray-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+        <div v-else-if="submissions.length === 0" class="text-center py-12 px-6">
+          <div class="w-16 h-16 bg-gray-50 rounded-2xl flex items-center justify-center mx-auto mb-3">
+            <svg xmlns="http://www.w3.org/2000/svg" class="h-8 w-8 text-gray-300" fill="none" viewBox="0 0 24 24" stroke="currentColor">
               <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
             </svg>
           </div>
-          <p class="text-sm text-gray-500 font-medium">Tidak ada data riwayat ditemukan.</p>
+          <p class="text-sm font-black text-gray-400">Tidak ada data riwayat ditemukan.</p>
+          <p class="text-xs text-gray-300 font-semibold mt-1">Coba ubah filter pencarianmu.</p>
         </div>
         
-        <div v-else class="space-y-3">
-          <div v-for="sub in submissions" :key="sub.id" @click="openDetail(sub)" class="flex items-center justify-between p-3 rounded-xl border border-gray-100 bg-gray-50/50 cursor-pointer hover:bg-blue-50 transition-colors group">
-            <div class="flex items-center gap-3">
-              <div :class="getStatusIconBg(sub.status)" class="w-10 h-10 rounded-full flex items-center justify-center shrink-0">
-                <svg v-if="sub.status === 'PENDING'" xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 text-yellow-600" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" /></svg>
-                <svg v-else-if="sub.status === 'APPROVED'" xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 text-green-600" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7" /></svg>
-                <svg v-else xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 text-red-600" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" /></svg>
+        <div v-else class="divide-y divide-gray-100">
+          <div
+            v-for="sub in submissions"
+            :key="sub.id"
+            @click="openDetail(sub)"
+            class="p-4 cursor-pointer hover:bg-blue-50/50 transition-colors group flex flex-col gap-3"
+          >
+            <div class="flex items-center justify-between">
+              <div class="flex items-center gap-3 overflow-hidden">
+                <div :class="getStatusIconBg(sub.status)" class="w-10 h-10 rounded-xl flex items-center justify-center shrink-0 shadow-sm">
+                  <svg v-if="sub.status === 'PENDING'" xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 text-amber-600" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" /></svg>
+                  <svg v-else-if="sub.status === 'APPROVED'" xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 text-green-600" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M5 13l4 4L19 7" /></svg>
+                  <svg v-else xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 text-red-500" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M6 18L18 6M6 6l12 12" /></svg>
+                </div>
+                <div class="overflow-hidden">
+                  <p class="text-xs font-bold text-gray-400 truncate">{{ sub.grow_id || 'Pengajuan Baru' }}</p>
+                  <p class="text-sm font-black text-gray-800 truncate group-hover:text-primary transition-colors mt-0.5">{{ sub.category_name }}</p>
+                </div>
               </div>
-              <div class="overflow-hidden">
-                <p class="text-sm font-semibold text-gray-800 truncate">{{ sub.grow_id || 'Pengajuan Baru' }}</p>
-                <p class="text-[11px] text-gray-500 truncate">{{ sub.category_name }} • {{ formatDate(sub.created_at) }}</p>
+              <div class="flex flex-col items-end shrink-0 pl-2">
+                <span :class="getStatusBadgeClass(sub.status)" class="mb-1 text-[10px]">
+                  {{ sub.status }}
+                </span>
+                <p class="text-[10px] font-bold text-gray-400">{{ formatDate(sub.created_at) }}</p>
               </div>
             </div>
-            <div class="text-right shrink-0">
-              <span :class="getStatusTextColor(sub.status)" class="text-xs font-bold px-2 py-1 rounded-md" :style="{ backgroundColor: getStatusBgColor(sub.status) }">
-                {{ sub.status }}
-              </span>
+            
+            <!-- Alasan Reject -->
+            <div v-if="sub.status === 'REJECTED' && sub.admin_notes && (sub.admin_notes.Valid ? sub.admin_notes.String : sub.admin_notes)" class="bg-red-50 border border-red-100 rounded-xl p-3 flex gap-2 items-start animate-fade-in">
+              <span class="text-sm">❌</span>
+              <div>
+                <p class="text-[10px] font-black text-red-500 uppercase tracking-wide">Alasan Penolakan</p>
+                <p class="text-xs font-semibold text-red-800 leading-tight mt-0.5">{{ sub.admin_notes.Valid ? sub.admin_notes.String : sub.admin_notes }}</p>
+              </div>
             </div>
           </div>
         </div>
 
-        <!-- Pagination Controls -->
-        <div v-if="totalPages > 1" class="mt-6 flex items-center justify-between border-t border-gray-100 pt-4">
-          <button 
-            @click="fetchHistory(currentPage - 1)" 
+        <!-- Pagination -->
+        <div v-if="totalPages > 1" class="flex items-center justify-between border-t border-gray-100 p-4">
+          <button
+            @click="fetchHistory(currentPage - 1)"
             :disabled="currentPage === 1"
-            class="px-3 py-1.5 text-sm font-medium rounded-lg transition-colors"
-            :class="currentPage === 1 ? 'text-gray-300 cursor-not-allowed bg-gray-50' : 'text-gray-700 bg-white border border-gray-200 hover:bg-gray-50'"
+            :class="[
+              'px-4 py-2 rounded-xl text-sm font-bold transition-colors',
+              currentPage === 1
+                ? 'text-gray-300 cursor-not-allowed bg-gray-50'
+                : 'text-primary bg-primary/10 hover:bg-primary/20'
+            ]"
           >
-            Sebelumnya
+            ← Sebelumnya
           </button>
           
-          <span class="text-sm font-medium text-gray-600">
-            Hal {{ currentPage }} dari {{ totalPages }}
+          <span class="text-sm font-bold text-gray-500">
+            {{ currentPage }} / {{ totalPages }}
           </span>
           
-          <button 
-            @click="fetchHistory(currentPage + 1)" 
+          <button
+            @click="fetchHistory(currentPage + 1)"
             :disabled="currentPage === totalPages"
-            class="px-3 py-1.5 text-sm font-medium rounded-lg transition-colors"
-            :class="currentPage === totalPages ? 'text-gray-300 cursor-not-allowed bg-gray-50' : 'text-gray-700 bg-white border border-gray-200 hover:bg-gray-50'"
+            :class="[
+              'px-4 py-2 rounded-xl text-sm font-bold transition-colors',
+              currentPage === totalPages
+                ? 'text-gray-300 cursor-not-allowed bg-gray-50'
+                : 'text-primary bg-primary/10 hover:bg-primary/20'
+            ]"
           >
-            Selanjutnya
+            Selanjutnya →
           </button>
         </div>
       </div>
     </div>
 
     <!-- Detail Modal -->
-    <div v-if="showDetailModal" class="fixed inset-0 z-50 flex items-center justify-center p-4 bg-gray-900/60 backdrop-blur-sm">
-      <div class="bg-white rounded-2xl shadow-xl w-full max-w-2xl max-h-[90vh] flex flex-col overflow-hidden">
-        <div class="px-6 py-4 border-b border-gray-100 flex justify-between items-center bg-gray-50 shrink-0">
-          <h3 class="text-lg font-bold text-gray-900">Detail Pengajuan</h3>
-          <button @click="closeDetailModal" class="text-gray-400 hover:text-gray-600 transition-colors">
-            <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/></svg>
+    <div v-if="showDetailModal" class="fixed inset-0 z-50 flex items-end sm:items-center justify-center p-0 sm:p-4 bg-gray-900/60 backdrop-blur-sm">
+      <div class="bg-white rounded-t-3xl sm:rounded-3xl shadow-2xl w-full max-w-2xl max-h-[90vh] flex flex-col overflow-hidden animate-slide-up">
+        <div class="px-6 py-4 border-b border-gray-100 flex justify-between items-center shrink-0">
+          <h3 class="text-lg font-black text-gray-900">Detail Pengajuan</h3>
+          <button @click="closeDetailModal" class="w-8 h-8 rounded-xl bg-gray-100 hover:bg-gray-200 flex items-center justify-center transition-colors text-gray-500">
+            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M6 18L18 6M6 6l12 12"/></svg>
           </button>
         </div>
 
@@ -123,60 +157,64 @@
               <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
             </svg>
           </div>
-          <div v-else-if="selectedDetail" class="space-y-6">
+          <div v-else-if="selectedDetail" class="space-y-5">
+            <!-- Status & ID -->
+            <div class="bg-gray-50 p-4 rounded-2xl border border-gray-100 flex justify-between items-center">
+              <div>
+                <p class="text-xs text-gray-400 font-bold uppercase tracking-wide mb-0.5">GROW ID</p>
+                <p class="font-black text-gray-900 text-lg">{{ selectedDetail.grow_id }}</p>
+                <p class="text-xs font-semibold text-gray-400 mt-0.5">{{ selectedDetail.category_name }}</p>
+              </div>
+              <span :class="getStatusBadgeClass(selectedDetail.status)" class="text-sm">
+                {{ selectedDetail.status }}
+              </span>
+            </div>
+
+            <!-- Rejection notes -->
+            <div v-if="selectedDetail.status === 'REJECTED' && selectedDetail.admin_notes?.Valid" class="bg-red-50 p-4 rounded-2xl border border-red-100">
+              <p class="text-xs font-black text-red-500 uppercase tracking-wide mb-1.5">❌ Alasan Penolakan</p>
+              <p class="text-sm text-red-800 font-semibold">{{ selectedDetail.admin_notes.String }}</p>
+            </div>
+
+            <!-- Approved points -->
+            <div v-if="selectedDetail.status === 'APPROVED'" class="bg-green-50 p-4 rounded-2xl border border-green-100 flex items-center gap-3">
+              <div class="w-10 h-10 rounded-xl bg-green-100 flex items-center justify-center">
+                <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 text-green-600" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M5 13l4 4L19 7" /></svg>
+              </div>
+              <div>
+                <p class="text-xs font-bold text-green-600 uppercase tracking-wide">Poin Didapat</p>
+                <p class="text-xl font-black text-green-800">{{ selectedDetail.points_awarded }} <span class="text-sm font-bold">pts</span></p>
+              </div>
+            </div>
+
+            <!-- Activity Details -->
             <div>
-              <h4 class="text-xs font-bold text-gray-400 uppercase tracking-wider mb-2">Status & ID</h4>
-              <div class="bg-gray-50 p-4 rounded-xl border border-gray-100 flex justify-between items-center">
-                <div>
-                  <p class="font-bold text-gray-900">{{ selectedDetail.grow_id }}</p>
-                  <p class="text-xs text-gray-500 mt-0.5">Kategori: {{ selectedDetail.category_name }}</p>
+              <p class="text-xs font-black text-gray-400 uppercase tracking-wide mb-2">Detail Aktivitas</p>
+              <div class="bg-white border-2 border-gray-100 rounded-2xl overflow-hidden divide-y divide-gray-100">
+                <div class="p-3.5 flex justify-between gap-4">
+                  <span class="text-sm font-semibold text-gray-500">Nama Aktivitas</span>
+                  <span class="text-sm font-bold text-gray-900 text-right">{{ selectedDetail.activity_name === 'Yang lain (Custom)' && selectedDetail.custom_activity_type?.Valid ? selectedDetail.custom_activity_type.String : selectedDetail.activity_name }}</span>
                 </div>
-                <span :class="getStatusTextColor(selectedDetail.status)" class="text-sm font-bold px-3 py-1.5 rounded-lg" :style="{ backgroundColor: getStatusBgColor(selectedDetail.status) }">
-                  {{ selectedDetail.status }}
-                </span>
-              </div>
-            </div>
-
-            <div v-if="selectedDetail.status === 'REJECTED' && selectedDetail.admin_notes?.Valid">
-              <h4 class="text-xs font-bold text-red-400 uppercase tracking-wider mb-2">Catatan Penolakan / Revisi</h4>
-              <div class="bg-red-50 p-4 rounded-xl border border-red-100 text-red-800 text-sm font-medium">
-                {{ selectedDetail.admin_notes.String }}
-              </div>
-            </div>
-
-            <div v-if="selectedDetail.status === 'APPROVED'">
-              <h4 class="text-xs font-bold text-green-500 uppercase tracking-wider mb-2">Penilaian Poin</h4>
-              <div class="bg-green-50 p-4 rounded-xl border border-green-100">
-                <p class="text-sm text-green-900">Poin Diberikan: <span class="font-bold text-xl">{{ selectedDetail.points_awarded }}</span> pts</p>
-              </div>
-            </div>
-
-            <div>
-              <h4 class="text-xs font-bold text-gray-400 uppercase tracking-wider mb-2">Detail Aktivitas</h4>
-              <div class="bg-white border border-gray-200 rounded-xl overflow-hidden divide-y divide-gray-100">
-                <div class="p-3 flex justify-between">
-                  <span class="text-sm text-gray-500">Nama Aktivitas</span>
-                  <span class="text-sm font-medium text-gray-900 text-right">{{ selectedDetail.activity_name === 'Yang lain (Custom)' && selectedDetail.custom_activity_type?.Valid ? selectedDetail.custom_activity_type.String : selectedDetail.activity_name }}</span>
+                <div v-if="selectedDetail.custom_reference?.Valid" class="p-3.5 flex justify-between gap-4">
+                  <span class="text-sm font-semibold text-gray-500">Kegiatan Spesifik</span>
+                  <span class="text-sm font-bold text-gray-900 text-right max-w-[200px]">{{ selectedDetail.custom_reference.String }}</span>
                 </div>
-                <div v-if="selectedDetail.custom_reference?.Valid" class="p-3 flex justify-between">
-                  <span class="text-sm text-gray-500">Kegiatan Spesifik</span>
-                  <span class="text-sm font-medium text-gray-900 text-right max-w-[200px]">{{ selectedDetail.custom_reference.String }}</span>
+                <div v-if="selectedDetail.nomor_ss?.Valid" class="p-3.5 flex justify-between gap-4">
+                  <span class="text-sm font-semibold text-gray-500">Nomor SS</span>
+                  <span class="text-sm font-black text-gray-900 text-right">{{ selectedDetail.nomor_ss.String }}</span>
                 </div>
-                <div v-if="selectedDetail.nomor_ss?.Valid" class="p-3 flex justify-between">
-                  <span class="text-sm text-gray-500">Nomor SS</span>
-                  <span class="text-sm font-bold text-gray-900 text-right">{{ selectedDetail.nomor_ss.String }}</span>
-                </div>
-                <div class="p-3 flex justify-between">
-                  <span class="text-sm text-gray-500">Tanggal Transaksi</span>
-                  <span class="text-sm font-medium text-gray-900">{{ formatDateOnly(selectedDetail.activity_date) }}</span>
+                <div class="p-3.5 flex justify-between gap-4">
+                  <span class="text-sm font-semibold text-gray-500">Tanggal Transaksi</span>
+                  <span class="text-sm font-bold text-gray-900">{{ formatDateOnly(selectedDetail.activity_date) }}</span>
                 </div>
               </div>
             </div>
 
+            <!-- Evidence -->
             <div v-if="selectedDetail.evidence && selectedDetail.evidence.length > 0">
-              <p class="text-sm font-bold text-gray-900 mb-3">Bukti Lampiran</p>
+              <p class="text-xs font-black text-gray-400 uppercase tracking-wide mb-2">Bukti Lampiran</p>
               <div class="grid grid-cols-2 gap-3">
-                <a v-for="(ev, idx) in selectedDetail.evidence" :key="idx" :href="ev" target="_blank" class="block group relative rounded-lg overflow-hidden border border-gray-200 bg-gray-50">
+                <a v-for="(ev, idx) in selectedDetail.evidence" :key="idx" :href="ev" target="_blank" class="block group relative rounded-2xl overflow-hidden border border-gray-200 bg-gray-50">
                   <div class="aspect-video w-full">
                     <img :src="ev" class="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300" />
                   </div>
@@ -189,11 +227,11 @@
           </div>
         </div>
         
-        <div class="p-4 border-t border-gray-100 bg-gray-50 shrink-0 flex gap-3">
-          <button v-if="selectedDetail?.status === 'REJECTED'" @click="goToRevision" class="flex-1 py-2.5 px-4 bg-primary text-white font-medium rounded-lg hover:bg-blue-700 transition-colors">
+        <div class="p-4 border-t border-gray-100 bg-gray-50/50 shrink-0 flex gap-3">
+          <button v-if="selectedDetail?.status === 'REJECTED'" @click="goToRevision" class="btn-game-primary flex-1 py-3 text-sm">
             Revisi Pengajuan
           </button>
-          <button @click="closeDetailModal" class="flex-1 py-2.5 px-4 bg-white border border-gray-300 text-gray-700 font-medium rounded-lg hover:bg-gray-50 transition-colors">
+          <button @click="closeDetailModal" class="flex-1 py-3 bg-white border-2 border-gray-200 text-gray-700 font-bold rounded-2xl hover:bg-gray-50 transition-colors text-sm">
             Tutup
           </button>
         </div>
@@ -308,23 +346,15 @@ const getStatusIconBg = (status: string) => {
   switch (status) {
     case 'APPROVED': return 'bg-green-100';
     case 'REJECTED': return 'bg-red-100';
-    default: return 'bg-yellow-100';
+    default: return 'bg-amber-100';
   }
 };
 
-const getStatusTextColor = (status: string) => {
+const getStatusBadgeClass = (status: string) => {
   switch (status) {
-    case 'APPROVED': return 'text-green-700';
-    case 'REJECTED': return 'text-red-700';
-    default: return 'text-yellow-700';
-  }
-};
-
-const getStatusBgColor = (status: string) => {
-  switch (status) {
-    case 'APPROVED': return '#dcfce7'; // green-100
-    case 'REJECTED': return '#fee2e2'; // red-100
-    default: return '#fef9c3'; // yellow-100
+    case 'APPROVED': return 'badge-approved';
+    case 'REJECTED': return 'badge-rejected';
+    default: return 'badge-pending';
   }
 };
 

@@ -24,7 +24,7 @@
       <div v-else>
         <DataTable
           title="Antrean Pengajuan"
-          subtitle="Pengajuan dengan status PENDING"
+          subtitle="Pengajuan dengan status MENUNGGU"
           :columns="submissionColumns"
           :rows="pendingQueue"
           :server-side="true"
@@ -46,10 +46,10 @@
             <div v-if="row.custom_reference?.Valid" class="text-xs text-gray-500 italic truncate max-w-[250px]">{{ row.custom_reference.String }}</div>
           </template>
           <template #cell-default_points="{ value }">
-            <span class="px-2 py-1 bg-blue-50 text-blue-700 rounded-md font-bold text-xs">{{ value }} pts</span>
+            <span class="px-2 py-1 bg-blue-50 text-blue-700 rounded-md font-bold text-xs">{{ value }}</span>
           </template>
           <template #actions="{ row }">
-            <button @click="openDetail(row.id)" class="text-primary hover:text-blue-900 font-semibold bg-blue-50 hover:bg-blue-100 px-3 py-1.5 rounded-lg transition-colors">Review</button>
+            <button @click="openDetail(row.id)" class="text-primary hover:text-blue-900 font-semibold bg-blue-50 hover:bg-blue-100 px-3 py-1.5 rounded-lg transition-colors">Tinjau</button>
           </template>
         </DataTable>
       </div>
@@ -62,7 +62,7 @@
         <!-- Modal Header -->
         <div class="px-6 py-4 border-b border-gray-100 flex justify-between items-center bg-gray-50">
           <div>
-            <h3 class="text-lg font-bold text-gray-900">Review Pengajuan: {{ selectedDetail.grow_id }}</h3>
+            <h3 class="text-lg font-bold text-gray-900">Tinjau Pengajuan: {{ selectedDetail.grow_id }}</h3>
           </div>
           <button @click="closeDetail" class="text-gray-400 hover:text-gray-600">
             <svg class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" /></svg>
@@ -109,13 +109,9 @@
 
               <div>
                 <h4 class="text-xs font-bold text-gray-400 uppercase tracking-wider mb-2">Penilaian Poin</h4>
-                <div class="bg-blue-50 p-4 rounded-xl border border-blue-100">
-                  <label class="block text-sm font-medium text-blue-900 mb-2">Poin yang Diberikan</label>
-                  <div class="flex items-center">
-                    <input type="number" min="0" v-model="pointsOverride" @wheel.prevent class="w-24 px-3 py-2 border border-blue-200 rounded-lg shadow-sm focus:outline-none focus:ring-1 focus:ring-primary focus:border-primary text-lg font-bold text-primary [appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none" />
-                    <span class="ml-2 text-sm font-medium text-blue-700">pts (Base: {{ selectedDetail.default_points }})</span>
-                  </div>
-                  <p class="text-xs text-blue-600 mt-2">Anda bisa mengubah poin default jika aktivitas ini bersifat dinamis (misal: Inovasi).</p>
+                <div>
+                  <p class="text-xs text-gray-500 mb-1">Poin yang Diberikan</p>
+                  <p class="font-bold text-2xl text-primary">{{ pointsOverride }} <span class="text-sm text-gray-500 font-medium">poin</span></p>
                 </div>
               </div>
 
@@ -132,17 +128,17 @@
               <div v-if="selectedDetail.evidence.length === 0" class="bg-gray-50 p-8 rounded-xl border border-gray-100 text-center text-gray-500 italic">
                 Tidak ada lampiran.
               </div>
-              <div v-else class="space-y-4">
-                <div v-for="(ev, idx) in selectedDetail.evidence" :key="idx" class="border border-gray-200 rounded-xl overflow-hidden bg-gray-50 relative group">
-                  <a :href="ev" target="_blank" class="block relative">
-                    <img :src="ev" class="w-full h-auto max-h-64 object-contain mx-auto" />
-                    <div class="absolute inset-0 bg-black/50 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center">
-                      <span class="text-white bg-black/70 px-3 py-1 rounded-full text-sm font-medium flex items-center">
-                        <svg class="w-4 h-4 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 21h7a2 2 0 002-2V9.414a1 1 0 00-.293-.707l-5.414-5.414A1 1 0 0012.586 3H7a2 2 0 00-2 2v11m0 5l4.879-4.879m0 0a3 3 0 104.243-4.242 3 3 0 00-4.243 4.242z"></path></svg>
-                        Buka Penuh
-                      </span>
-                    </div>
-                  </a>
+              <div v-else class="grid grid-cols-3 gap-2">
+                <div v-for="(ev, idx) in selectedDetail.evidence" :key="idx" @click="previewImageUrl = ev" class="border border-gray-200 rounded-xl overflow-hidden bg-gray-50 relative group cursor-pointer shadow-sm hover:shadow-md transition-shadow">
+                  <div class="aspect-square w-full">
+                    <img :src="ev" class="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300" />
+                  </div>
+                  <div class="absolute inset-0 bg-black/40 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center">
+                    <span class="text-white bg-black/70 px-2.5 py-1 rounded-lg text-xs font-bold flex items-center shadow-lg">
+                      <svg class="w-3.5 h-3.5 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" /><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z" /></svg>
+                      Lihat
+                    </span>
+                  </div>
                 </div>
               </div>
             </div>
@@ -160,8 +156,8 @@
               <button @click="submitReject" :disabled="!adminNotes || isProcessing" class="px-4 py-2 bg-red-600 text-white rounded-lg hover:bg-red-700 transition-colors font-medium text-sm disabled:opacity-50">Kirim Penolakan</button>
             </template>
             <template v-else>
-              <button @click="actionType = 'reject'" class="px-4 py-2 border border-red-200 text-red-600 bg-red-50 hover:bg-red-100 rounded-lg transition-colors font-medium text-sm">Tolak (Reject)</button>
-              <button @click="submitApprove" :disabled="isProcessing" class="px-6 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 transition-colors font-medium text-sm">Setujui (Approve)</button>
+              <button @click="actionType = 'reject'" class="px-4 py-2 border border-red-200 text-red-600 bg-red-50 hover:bg-red-100 rounded-lg transition-colors font-medium text-sm">Tolak</button>
+              <button @click="submitApprove" :disabled="isProcessing" class="px-6 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 transition-colors font-medium text-sm">Setujui</button>
             </template>
           </div>
         </div>
@@ -191,6 +187,16 @@
       </div>
     </div>
 
+    <!-- Image Preview Modal -->
+    <div v-if="previewImageUrl" class="fixed inset-0 z-[70] flex items-center justify-center p-4 bg-gray-900/90 backdrop-blur-sm" @click="previewImageUrl = null">
+      <div class="relative w-full h-full flex flex-col items-center justify-center animate-fade-in">
+        <button @click.stop="previewImageUrl = null" class="absolute top-4 right-4 md:top-8 md:right-8 p-3 bg-white/10 hover:bg-white/20 text-white rounded-full transition-colors backdrop-blur-md">
+          <svg class="w-6 h-6" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" /></svg>
+        </button>
+        <img :src="previewImageUrl" class="max-w-full max-h-[85vh] object-contain rounded-xl shadow-2xl" @click.stop />
+      </div>
+    </div>
+
   </div>
 </template>
 
@@ -209,10 +215,10 @@ const router = useRouter();
 const authStore = useAuthStore();
 
 const submissionColumns = [
-  { key: 'created_at', label: 'Tgl Submit' },
+  { key: 'created_at', label: 'TGL PENGAJUAN' },
   { key: 'user_name', label: 'Karyawan' },
   { key: 'activity_name', label: 'Aktivitas' },
-  { key: 'default_points', label: 'Poin Base' }
+  { key: 'default_points', label: 'POIN DASAR' }
 ];
 
 const pendingQueue = ref<any[]>([]);
@@ -227,6 +233,7 @@ const adminNotes = ref('');
 const isProcessing = ref(false);
 const toast = useToast();
 const showZeroPointsConfirm = ref(false);
+const previewImageUrl = ref<string | null>(null);
 
 const fetchQueue = async () => {
   isLoading.value = true;
@@ -251,7 +258,6 @@ const openDetail = async (id: number) => {
     const res = await apiClient.get(`/admin/submissions/${id}`);
     selectedDetail.value = res.data.data;
     console.log(selectedDetail.value.evidence);
-    
     pointsOverride.value = res.data.data.default_points;
     actionType.value = null;
     adminNotes.value = '';

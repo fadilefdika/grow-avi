@@ -50,11 +50,7 @@
           <template #cell-points_required="{ value }">
             <span class="font-bold text-primary">{{ value }} pts</span>
           </template>
-          <template #cell-stock="{ value }">
-            <span :class="['px-2 py-1 rounded-md font-bold text-xs', value > 0 ? 'bg-green-100 text-green-800' : 'bg-red-100 text-red-800']">
-              {{ value }}
-            </span>
-          </template>
+
           <template #row-actions="{ row }">
             <button @click="openRewardModal(row)" class="text-blue-600 hover:text-blue-900 mr-3">Edit</button>
             <button @click="deleteReward(row.id)" class="text-red-600 hover:text-red-900">Hapus</button>
@@ -108,20 +104,14 @@
             <label class="block text-sm font-medium text-gray-700 mb-1">Deskripsi (Opsional)</label>
             <textarea v-model="rewardForm.description" rows="2" class="w-full px-3 py-2 border border-gray-300 rounded-lg shadow-sm focus:outline-none focus:ring-1 focus:ring-primary focus:border-primary"></textarea>
           </div>
-          <div class="grid grid-cols-2 gap-4">
-            <div>
-              <label class="block text-sm font-medium text-gray-700 mb-1">Poin Diperlukan</label>
-              <input type="number" min="0" @wheel.prevent v-model="rewardForm.points_required" class="w-full px-3 py-2 border border-gray-300 rounded-lg shadow-sm focus:outline-none focus:ring-1 focus:ring-primary focus:border-primary [appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none" />
-            </div>
-            <div>
-              <label class="block text-sm font-medium text-gray-700 mb-1">Stok</label>
-              <input type="number" min="0" @wheel.prevent v-model="rewardForm.stock" class="w-full px-3 py-2 border border-gray-300 rounded-lg shadow-sm focus:outline-none focus:ring-1 focus:ring-primary focus:border-primary [appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none" />
-            </div>
+          <div>
+            <label class="block text-sm font-medium text-gray-700 mb-1">Poin Diperlukan</label>
+            <input type="number" min="0" @wheel.prevent v-model="rewardForm.points_required" class="w-full px-3 py-2 border border-gray-300 rounded-lg shadow-sm focus:outline-none focus:ring-1 focus:ring-primary focus:border-primary [appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none" />
           </div>
           
           <div class="flex justify-end gap-3 mt-6">
             <button @click="showRewardModal = false" class="px-4 py-2 border border-gray-300 text-gray-700 rounded-lg hover:bg-gray-100 transition-colors font-medium text-sm">Batal</button>
-            <button @click="saveReward" :disabled="isProcessing || !rewardForm.title || rewardForm.points_required <= 0 || rewardForm.stock < 0" class="px-4 py-2 bg-primary text-white rounded-lg hover:bg-blue-800 transition-colors font-medium text-sm disabled:opacity-50">Simpan</button>
+            <button @click="saveReward" :disabled="isProcessing || !rewardForm.title || rewardForm.points_required <= 0" class="px-4 py-2 bg-primary text-white rounded-lg hover:bg-blue-800 transition-colors font-medium text-sm disabled:opacity-50">Simpan</button>
           </div>
         </div>
       </div>
@@ -145,8 +135,7 @@ const toast = useToast();
 
 const rewardColumns = [
   { key: 'title', label: 'Nama Hadiah' },
-  { key: 'points_required', label: 'Poin Diperlukan' },
-  { key: 'stock', label: 'Stok' }
+  { key: 'points_required', label: 'Poin Diperlukan' }
 ];
 
 const redemptionColumns = [
@@ -170,7 +159,7 @@ const isProcessing = ref(false);
 
 const showRewardModal = ref(false);
 const editingReward = ref<any>(null);
-const rewardForm = ref({ title: '', description: '', points_required: 0, stock: 0 });
+const rewardForm = ref({ title: '', description: '', points_required: 0 });
 
 const fetchRewards = async () => {
   try {
@@ -219,12 +208,11 @@ const openRewardModal = (reward?: any) => {
     rewardForm.value = {
       title: reward.title,
       description: reward.description || '',
-      points_required: reward.points_required,
-      stock: reward.stock
+      points_required: reward.points_required
     };
   } else {
     editingReward.value = null;
-    rewardForm.value = { title: '', description: '', points_required: 0, stock: 0 };
+    rewardForm.value = { title: '', description: '', points_required: 0 };
   }
   showRewardModal.value = true;
 };
