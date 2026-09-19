@@ -2,6 +2,7 @@ package leaderboard
 
 import (
 	"database/sql"
+	"fmt"
 	"log/slog"
 	"net/http"
 
@@ -31,6 +32,7 @@ type LeaderboardEntry struct {
 func (h *LeaderboardHandler) GetLeaderboard(c *gin.Context) {
 	categoryID := c.Query("category_id")
 	department := c.Query("department")
+	activityID := c.Query("activity_id")
 
 	// Base query — aggregate per NPK
 	baseQuery := `
@@ -46,12 +48,17 @@ func (h *LeaderboardHandler) GetLeaderboard(c *gin.Context) {
 	paramIdx := 1
 
 	if categoryID != "" {
-		baseQuery += " AND s.activity_id IN (SELECT id FROM activities WHERE category_id = @p" + string(rune('0'+paramIdx)) + " AND deleted_at IS NULL)"
+		baseQuery += fmt.Sprintf(" AND s.activity_id IN (SELECT id FROM activities WHERE category_id = @p%d AND deleted_at IS NULL)", paramIdx)
 		args = append(args, categoryID)
 		paramIdx++
 	}
+	if activityID != "" {
+		baseQuery += fmt.Sprintf(" AND s.activity_id = @p%d", paramIdx)
+		args = append(args, activityID)
+		paramIdx++
+	}
 	if department != "" {
-		baseQuery += " AND s.department = @p" + string(rune('0'+paramIdx))
+		baseQuery += fmt.Sprintf(" AND s.department = @p%d", paramIdx)
 		args = append(args, department)
 		paramIdx++
 	}

@@ -43,7 +43,7 @@ type CreateSubmissionRequest struct {
 
 // generateGrowID generates a unique GROW ID: GY + YY + 3-digit sequence
 func (h *SubmissionHandler) generateGrowID() (string, error) {
-	dateStr := time.Now().Format("06")
+	dateStr := time.Now().Format("01")
 	prefix := "GR" + dateStr
 	var seq int
 	err := h.db.QueryRow(
@@ -592,7 +592,8 @@ func (h *SubmissionHandler) Approve(c *gin.Context) {
 }
 
 type RejectRequest struct {
-	AdminNotes string `json:"admin_notes" binding:"required"`
+	AdminNotes  string `json:"admin_notes" binding:"required"`
+	CanResubmit bool   `json:"can_resubmit"`
 }
 
 // POST /api/admin/submissions/:id/reject
@@ -617,11 +618,16 @@ func (h *SubmissionHandler) Reject(c *gin.Context) {
 		return
 	}
 
+	newStatus := "REJECTED"
+	if req.CanResubmit {
+		newStatus = "REJECTED_RESUBMIT"
+	}
+
 	_, err = h.db.Exec(
 		`UPDATE activity_submissions
-		SET status = 'REJECTED', admin_notes = @p1, reviewed_by_npk = @p2, reviewed_at = GETDATE(), updated_at = GETDATE()
-		WHERE id = @p3`,
-		req.AdminNotes, adminNPK, id,
+		SET status = @p1, admin_notes = @p2, reviewed_by_npk = @p3, reviewed_at = GETDATE(), updated_at = GETDATE()
+		WHERE id = @p4`,
+		newStatus, req.AdminNotes, adminNPK, id,
 	)
 	if err != nil {
 		slog.Error("gagal reject pengajuan", "error", err)
@@ -646,8 +652,8 @@ func (h *SubmissionHandler) Resubmit(c *gin.Context) {
 		c.JSON(http.StatusForbidden, gin.H{"error": "tidak punya akses ke pengajuan ini"})
 		return
 	}
-	if status != "REJECTED" {
-		c.JSON(http.StatusBadRequest, gin.H{"error": "hanya pengajuan REJECTED yang bisa di-resubmit"})
+	if status != "REJECTED_RESUBMIT" {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "hanya pengajuan REJECTED_RESUBMIT yang bisa di-resubmit"})
 		return
 	}
 

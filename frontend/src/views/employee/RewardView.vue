@@ -127,19 +127,38 @@
           </p>
           <p class="font-black text-gray-800 text-base mb-5">{{ selectedReward.title }}</p>
 
-          <!-- Balance check -->
-          <div class="bg-gray-50 rounded-2xl p-3 mb-5 flex justify-between items-center">
-            <span class="text-sm font-bold text-gray-500">Sisa poin setelah tukar:</span>
-            <span class="text-sm font-black text-primary">{{ balance - selectedReward.points_required }} pts</span>
+          <!-- Point Selection -->
+          <div class="text-left mb-5">
+            <p class="text-xs font-bold text-gray-500 uppercase tracking-wide mb-2">Pilih Poin ID GROW</p>
+            <div class="max-h-48 overflow-y-auto space-y-2 pr-1 mb-3 custom-scrollbar">
+              <label v-for="pt in availablePoints" :key="pt.id" class="flex items-center justify-between p-3 rounded-xl border cursor-pointer transition-colors" :class="selectedSubmissionIds.has(pt.id) ? 'bg-blue-50 border-primary' : 'bg-white border-gray-200 hover:border-gray-300'">
+                <div class="flex items-center gap-3">
+                  <input type="checkbox" :checked="selectedSubmissionIds.has(pt.id)" @change="togglePoint(pt.id)" class="w-4 h-4 text-primary bg-gray-100 border-gray-300 rounded focus:ring-primary" />
+                  <div>
+                    <p class="text-xs font-bold" :class="selectedSubmissionIds.has(pt.id) ? 'text-primary' : 'text-gray-900'">{{ pt.grow_id }}</p>
+                    <p class="text-[10px] font-semibold text-gray-500 truncate max-w-[150px]">{{ pt.activity_name }}</p>
+                  </div>
+                </div>
+                <span class="text-sm font-black" :class="selectedSubmissionIds.has(pt.id) ? 'text-primary' : 'text-gray-900'">{{ pt.points_awarded }} pts</span>
+              </label>
+              <div v-if="availablePoints.length === 0" class="text-center py-4 bg-gray-50 rounded-xl">
+                <p class="text-xs font-semibold text-gray-500">Tidak ada tiket poin yang tersedia.</p>
+              </div>
+            </div>
+            
+            <div class="bg-gray-50 rounded-xl p-3 flex justify-between items-center border border-gray-100">
+              <span class="text-xs font-bold text-gray-500">Total Terpilih:</span>
+              <span class="text-sm font-black" :class="totalSelectedPoints >= selectedReward.points_required ? 'text-green-600' : 'text-red-500'">{{ totalSelectedPoints }} / {{ selectedReward.points_required }} pts</span>
+            </div>
           </div>
           
           <div class="grid grid-cols-2 gap-3">
             <button @click="selectedReward = null" class="py-3.5 bg-gray-100 text-gray-700 font-black rounded-2xl hover:bg-gray-200 transition-colors text-sm">
               Batal
             </button>
-            <button @click="executeRedeem" :disabled="isRedeeming" class="btn-game-orange py-3.5 text-sm flex items-center justify-center gap-2 disabled:opacity-60">
+            <button @click="executeRedeem" :disabled="isRedeeming || totalSelectedPoints < selectedReward.points_required" class="btn-game-orange py-3.5 text-sm flex items-center justify-center gap-2 disabled:opacity-60">
               <svg v-if="isRedeeming" class="animate-spin h-4 w-4 text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24"><circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle><path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path></svg>
-              {{ isRedeeming ? 'Memproses...' : 'Ya, Tukar! 🎉' }}
+              {{ isRedeeming ? 'Memproses...' : 'Tukar! 🎉' }}
             </button>
           </div>
         </div>
@@ -158,7 +177,25 @@ const balance = ref(0);
 const isLoading = ref(true);
 const isRedeeming = ref(false);
 const selectedReward = ref<any>(null);
+const availablePoints = ref<any[]>([]);
+const selectedSubmissionIds = ref<Set<number>>(new Set());
 const toast = useToast();
+
+import { computed } from 'vue';
+
+const totalSelectedPoints = computed(() => {
+  return availablePoints.value
+    .filter(p => selectedSubmissionIds.value.has(p.id))
+    .reduce((sum, p) => sum + p.points_awarded, 0);
+});
+
+const togglePoint = (id: number) => {
+  if (selectedSubmissionIds.value.has(id)) {
+    selectedSubmissionIds.value.delete(id);
+  } else {
+    selectedSubmissionIds.value.add(id);
+  }
+};
 
 const getRewardEmoji = (title: string): string => {
   const t = title?.toLowerCase() || '';
@@ -177,12 +214,14 @@ const getRewardEmoji = (title: string): string => {
 const fetchData = async () => {
   isLoading.value = true;
   try {
-    const [balRes, rwRes] = await Promise.all([
+    const [balRes, rwRes, apRes] = await Promise.all([
       apiClient.get('/leaderboard/my-balance'),
-      apiClient.get('/rewards')
+      apiClient.get('/rewards'),
+      apiClient.get('/available-points')
     ]);
     balance.value = balRes.data.balance || 0;
     rewards.value = rwRes.data.data || [];
+    availablePoints.value = apRes.data.data || [];
   } catch (err) {
     toast.error('Gagal memuat data katalog hadiah.');
     console.error(err);
@@ -193,6 +232,7 @@ const fetchData = async () => {
 
 const confirmRedeem = (reward: any) => {
   selectedReward.value = reward;
+  selectedSubmissionIds.value.clear();
 };
 
 const executeRedeem = async () => {
@@ -201,13 +241,13 @@ const executeRedeem = async () => {
   isRedeeming.value = true;
   
   try {
-    const res = await apiClient.post(`/rewards/redeem/${selectedReward.value.id}`);
+    const res = await apiClient.post(`/rewards/redeem/${selectedReward.value.id}`, {
+      submission_ids: Array.from(selectedSubmissionIds.value)
+    });
     toast.success(res.data.message || `Berhasil menukar ${selectedReward.value.title}! 🎉`);
-    balance.value = res.data.remaining_balance;
     
-    // Refresh catalog to update stock
-    const rwRes = await apiClient.get('/rewards');
-    rewards.value = rwRes.data.data || [];
+    // Refresh catalog and points to update stock and balance
+    fetchData();
     
   } catch (err: any) {
     if (err.response && err.response.data && err.response.data.error) {

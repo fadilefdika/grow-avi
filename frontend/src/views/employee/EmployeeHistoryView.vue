@@ -95,11 +95,18 @@
             </div>
             
             <!-- Alasan Reject -->
-            <div v-if="sub.status === 'REJECTED' && sub.admin_notes && (sub.admin_notes.Valid ? sub.admin_notes.String : sub.admin_notes)" class="bg-red-50 border border-red-100 rounded-xl p-3 flex gap-2 items-start animate-fade-in">
-              <span class="text-sm">❌</span>
-              <div>
-                <p class="text-[10px] font-black text-red-500 uppercase tracking-wide">Alasan Penolakan</p>
-                <p class="text-xs font-semibold text-red-800 leading-tight mt-0.5">{{ sub.admin_notes.Valid ? sub.admin_notes.String : sub.admin_notes }}</p>
+            <div v-if="(sub.status === 'REJECTED' || sub.status === 'REJECTED_RESUBMIT') && sub.admin_notes && (sub.admin_notes.Valid ? sub.admin_notes.String : sub.admin_notes)" class="bg-red-50 border border-red-100 rounded-xl p-3 flex flex-col gap-2 animate-fade-in">
+              <div class="flex gap-2 items-start">
+                <span class="text-sm">❌</span>
+                <div>
+                  <p class="text-[10px] font-black text-red-500 uppercase tracking-wide">Alasan Penolakan</p>
+                  <p class="text-xs font-semibold text-red-800 leading-tight mt-0.5">{{ sub.admin_notes.Valid ? sub.admin_notes.String : sub.admin_notes }}</p>
+                </div>
+              </div>
+              <div v-if="sub.status === 'REJECTED_RESUBMIT'" class="mt-1 flex justify-end">
+                <button @click.stop="$router.push({ path: '/submit', query: { revisi_id: sub.id } })" class="px-3 py-1.5 bg-orange-500 text-white rounded-lg text-xs font-bold hover:bg-orange-600 transition-colors shadow-sm">
+                  Perbaiki Pengajuan
+                </button>
               </div>
             </div>
           </div>
@@ -171,9 +178,12 @@
             </div>
 
             <!-- Rejection notes -->
-            <div v-if="selectedDetail.status === 'REJECTED' && selectedDetail.admin_notes?.Valid" class="bg-red-50 p-4 rounded-2xl border border-red-100">
+            <div v-if="(selectedDetail.status === 'REJECTED' || selectedDetail.status === 'REJECTED_RESUBMIT') && selectedDetail.admin_notes?.Valid" class="bg-red-50 p-4 rounded-2xl border border-red-100">
               <p class="text-xs font-black text-red-500 uppercase tracking-wide mb-1.5">❌ Alasan Penolakan</p>
-              <p class="text-sm text-red-800 font-semibold">{{ selectedDetail.admin_notes.String }}</p>
+              <p class="text-sm text-red-800 font-semibold mb-3">{{ selectedDetail.admin_notes.String }}</p>
+              <button v-if="selectedDetail.status === 'REJECTED_RESUBMIT'" @click.stop="$router.push({ path: '/submit', query: { revisi_id: selectedDetail.id } })" class="w-full px-4 py-2 bg-orange-500 text-white rounded-xl text-sm font-bold hover:bg-orange-600 transition-colors">
+                Perbaiki Pengajuan Sekarang
+              </button>
             </div>
 
             <!-- Approved points -->

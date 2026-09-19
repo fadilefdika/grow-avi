@@ -153,7 +153,8 @@
           <div class="flex gap-3">
             <template v-if="actionType === 'reject'">
               <button @click="actionType = null" class="px-4 py-2 border border-gray-300 text-gray-700 rounded-lg hover:bg-gray-100 transition-colors font-medium text-sm">Batal</button>
-              <button @click="submitReject" :disabled="!adminNotes || isProcessing" class="px-4 py-2 bg-red-600 text-white rounded-lg hover:bg-red-700 transition-colors font-medium text-sm disabled:opacity-50">Kirim Penolakan</button>
+              <button @click="submitReject(true)" :disabled="!adminNotes || isProcessing" class="px-4 py-2 bg-orange-600 text-white rounded-lg hover:bg-orange-700 transition-colors font-medium text-sm disabled:opacity-50">Tolak (Bisa Diperbaiki)</button>
+              <button @click="submitReject(false)" :disabled="!adminNotes || isProcessing" class="px-4 py-2 bg-red-600 text-white rounded-lg hover:bg-red-700 transition-colors font-medium text-sm disabled:opacity-50">Tolak Permanen</button>
             </template>
             <template v-else>
               <button @click="actionType = 'reject'" class="px-4 py-2 border border-red-200 text-red-600 bg-red-50 hover:bg-red-100 rounded-lg transition-colors font-medium text-sm">Tolak</button>
@@ -305,14 +306,15 @@ const doApprove = async () => {
   }
 };
 
-const submitReject = async () => {
+const submitReject = async (canResubmit: boolean) => {
   if (!selectedDetail.value) return;
   isProcessing.value = true;
   try {
     await apiClient.post(`/admin/submissions/${selectedDetail.value.id}/reject`, {
-      admin_notes: adminNotes.value
+      admin_notes: adminNotes.value,
+      can_resubmit: canResubmit
     });
-    toast.success('Pengajuan telah ditolak.');
+    toast.success(canResubmit ? 'Pengajuan ditolak (dengan perbaikan).' : 'Pengajuan telah ditolak permanen.');
     closeDetail();
     fetchQueue();
   } catch (err: any) {

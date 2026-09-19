@@ -96,6 +96,7 @@ func main() {
 
 		// Rewards (employee)
 		api.GET("/rewards", rewardHandler.GetRewards)
+		api.GET("/available-points", rewardHandler.GetAvailablePoints)
 		api.POST("/rewards/redeem/:id", rewardHandler.Redeem)
 		api.GET("/rewards/history", rewardHandler.MyRedemptions)
 

@@ -43,6 +43,19 @@
               <div v-for="dept in availableDepartments" :key="dept" @click="selectDepartment(dept)" class="px-3 py-2.5 text-sm font-bold rounded-lg hover:bg-blue-50 cursor-pointer truncate" :class="filterDepartment === dept ? 'text-primary bg-blue-50' : 'text-gray-600'">{{ dept }}</div>
             </div>
           </div>
+          <!-- Aktivitas -->
+          <div class="flex-1 relative">
+            <label class="block text-xs font-bold text-gray-500 mb-1.5 uppercase tracking-wide">Aktivitas</label>
+            <button @click="toggleActivityDropdown" class="w-full text-left bg-gray-50 border-2 border-gray-200 text-gray-700 rounded-xl px-3 py-2.5 text-sm font-bold flex justify-between items-center transition-colors hover:border-primary/50" :class="{'border-primary': showActivityDropdown}">
+              <span class="truncate pr-2">{{ getActivityName(filterActivity) }}</span>
+              <svg class="w-4 h-4 text-gray-400 shrink-0 transition-transform" :class="{'rotate-180': showActivityDropdown}" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"></path></svg>
+            </button>
+            
+            <div v-if="showActivityDropdown" class="absolute z-50 w-full mt-2 bg-white border border-gray-100 rounded-xl shadow-xl max-h-60 overflow-y-auto p-1">
+              <div @click="selectActivity('')" class="px-3 py-2.5 text-sm font-bold rounded-lg hover:bg-blue-50 cursor-pointer" :class="!filterActivity ? 'text-primary bg-blue-50' : 'text-gray-600'">Semua Aktivitas</div>
+              <div v-for="act in filteredActivitiesForDropdown" :key="act.id" @click="selectActivity(act)" class="px-3 py-2.5 text-sm font-bold rounded-lg hover:bg-blue-50 cursor-pointer truncate" :class="filterActivity === act.id ? 'text-primary bg-blue-50' : 'text-gray-600'">{{ act.name }}</div>
+            </div>
+          </div>
         </div>
       </div>
 
@@ -100,27 +113,64 @@ import AdminSidebar from '../../components/layout/AdminSidebar.vue';
 
 const leaderboard = ref<any[]>([]);
 const categories = ref<any[]>([]);
+const activities = ref<any[]>([]);
 const availableDepartments = ref<string[]>([]);
 const filterCategory = ref('');
+const filterActivity = ref('');
 const filterDepartment = ref('');
 const isLoading = ref(true);
 
 const showCategoryDropdown = ref(false);
 const showDepartmentDropdown = ref(false);
+const showActivityDropdown = ref(false);
+
+import { computed } from 'vue';
+
+const filteredActivitiesForDropdown = computed(() => {
+  if (!filterCategory.value) return activities.value;
+  return activities.value.filter(a => a.category_id === filterCategory.value);
+});
 
 const toggleCategoryDropdown = () => {
   showCategoryDropdown.value = !showCategoryDropdown.value;
   showDepartmentDropdown.value = false;
+  showActivityDropdown.value = false;
 };
 
 const toggleDepartmentDropdown = () => {
   showDepartmentDropdown.value = !showDepartmentDropdown.value;
   showCategoryDropdown.value = false;
+  showActivityDropdown.value = false;
+};
+
+const toggleActivityDropdown = () => {
+  showActivityDropdown.value = !showActivityDropdown.value;
+  showCategoryDropdown.value = false;
+  showDepartmentDropdown.value = false;
 };
 
 const selectCategory = (id: string) => {
   filterCategory.value = id;
+  if (filterActivity.value) {
+    const act = activities.value.find((a: any) => a.id === filterActivity.value);
+    if (act && act.category_id !== filterCategory.value && filterCategory.value !== '') {
+      filterActivity.value = '';
+    }
+  }
   showCategoryDropdown.value = false;
+  fetchLeaderboard();
+};
+
+const selectActivity = (act: any) => {
+  if (!act) {
+    filterActivity.value = '';
+  } else {
+    filterActivity.value = act.id;
+    if (act.category_id) {
+      filterCategory.value = act.category_id;
+    }
+  }
+  showActivityDropdown.value = false;
   fetchLeaderboard();
 };
 
@@ -132,8 +182,14 @@ const selectDepartment = (dept: string) => {
 
 const getCategoryName = (id: string) => {
   if (!id) return 'Semua Kategori';
-  const c = categories.value.find(c => c.id == id);
+  const c = categories.value.find((c: any) => c.id == id);
   return c ? c.name : 'Semua Kategori';
+};
+
+const getActivityName = (id: string) => {
+  if (!id) return 'Semua Aktivitas';
+  const act = activities.value.find((c: any) => c.id === id);
+  return act ? act.name : 'Semua Aktivitas';
 };
 
 // Close dropdowns when clicking outside (simple implementation by listening on window)
@@ -143,16 +199,21 @@ if (typeof window !== 'undefined') {
     if (!target.closest('.relative')) {
       showCategoryDropdown.value = false;
       showDepartmentDropdown.value = false;
+      showActivityDropdown.value = false;
     }
   });
 }
 
 const fetchCategories = async () => {
   try {
-    const res = await apiClient.get('/categories');
-    categories.value = res.data.data || [];
+    const [catRes, actRes] = await Promise.all([
+      apiClient.get('/categories'),
+      apiClient.get('/activities')
+    ]);
+    categories.value = catRes.data.data || [];
+    activities.value = actRes.data.data || [];
   } catch (err) {
-    console.error("Gagal load kategori", err);
+    console.error("Gagal load master data", err);
   }
 };
 
@@ -162,6 +223,7 @@ const fetchLeaderboard = async () => {
     let url = '/leaderboard';
     const params = new URLSearchParams();
     if (filterCategory.value) params.append('category_id', filterCategory.value);
+    if (filterActivity.value) params.append('activity_id', filterActivity.value);
     if (filterDepartment.value) params.append('department', filterDepartment.value);
     
     if (params.toString()) {

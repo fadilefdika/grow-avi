@@ -412,8 +412,8 @@ const fetchSubmissionForEdit = async (id: string) => {
   try {
     const res = await apiClient.get(`/submissions/${id}`);
     const data = res.data.data;
-    if (data.status !== 'REJECTED') {
-      toast.error('Hanya pengajuan yang ditolak yang dapat direvisi');
+    if (data.status !== 'REJECTED_RESUBMIT') {
+      toast.error('Hanya pengajuan yang dikembalikan untuk revisi yang dapat diperbaiki');
       router.push('/dashboard');
       return;
     }

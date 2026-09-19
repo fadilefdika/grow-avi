@@ -138,32 +138,43 @@ func (h *RewardHandler) Redeem(c *gin.Context) {
 	}
 
 	// Check user's current balance — also within transaction to be safe
-	var totalEarned, totalSpent int
-	err = tx.QueryRow(
-		"SELECT ISNULL(SUM(points_awarded), 0) FROM activity_submissions WHERE npk = @p1 AND status = 'APPROVED' AND deleted_at IS NULL",
-		npk,
-	).Scan(&totalEarned)
-	if err != nil {
-		slog.Error("gagal menghitung saldo poin", "error", err)
-		c.JSON(http.StatusInternalServerError, gin.H{"error": "gagal menghitung saldo poin"})
+	var req struct {
+		SubmissionIDs []int64 `json:"submission_ids" binding:"required"`
+	}
+	if err := c.ShouldBindJSON(&req); err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "submission_ids (ID GROW) wajib dipilih"})
+		return
+	}
+	if len(req.SubmissionIDs) == 0 {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "Anda belum memilih ID GROW yang akan digunakan"})
 		return
 	}
 
-	err = tx.QueryRow(
-		"SELECT ISNULL(SUM(points_spent), 0) FROM reward_redemptions WHERE npk = @p1 AND deleted_at IS NULL AND status != 'CANCELLED'",
-		npk,
-	).Scan(&totalSpent)
-	if err != nil {
-		slog.Error("gagal menghitung poin yang sudah digunakan", "error", err)
-		c.JSON(http.StatusInternalServerError, gin.H{"error": "gagal menghitung poin yang sudah digunakan"})
-		return
+	// Calculate total selected points
+	var totalSelectedPoints int
+	
+	// Create an IN clause for parameters
+	inClause := ""
+	for i := range req.SubmissionIDs {
+		if i > 0 {
+			inClause += ","
+		}
+		inClause += fmt.Sprintf("@p%d", i+2)
 	}
 
-	balance := totalEarned - totalSpent
-	if balance < pointsRequired {
+	query := fmt.Sprintf("SELECT ISNULL(SUM(points_awarded), 0) FROM activity_submissions WHERE npk = @p1 AND status = 'APPROVED' AND is_spent = 0 AND deleted_at IS NULL AND id IN (%s)", inClause)
+	
+	args := []interface{}{npk} 
+	for _, id := range req.SubmissionIDs {
+		args = append(args, id)
+	}
+
+	err = tx.QueryRow(query, args...).Scan(&totalSelectedPoints)
+	
+	if totalSelectedPoints < pointsRequired {
 		c.JSON(http.StatusPaymentRequired, gin.H{
-			"error":           "saldo poin tidak mencukupi",
-			"current_balance": balance,
+			"error":           "total poin ID GROW yang dipilih tidak mencukupi",
+			"selected_points": totalSelectedPoints,
 			"required_points": pointsRequired,
 		})
 		return
@@ -190,6 +201,21 @@ func (h *RewardHandler) Redeem(c *gin.Context) {
 		slog.Error("gagal mencatat penukaran reward", "error", err)
 		c.JSON(http.StatusInternalServerError, gin.H{"error": "gagal mencatat penukaran reward"})
 		return
+	}
+
+	// Mark chosen submissions as spent and link to redemption_items
+	for _, subID := range req.SubmissionIDs {
+		_, err = tx.Exec("UPDATE activity_submissions SET is_spent = 1 WHERE id = @p1", subID)
+		if err != nil {
+			slog.Error("gagal update is_spent activity", "error", err)
+			c.JSON(http.StatusInternalServerError, gin.H{"error": "gagal menghanguskan tiket poin"})
+			return
+		}
+
+		_, err = tx.Exec("INSERT INTO redemption_items (redemption_id, submission_id) VALUES (@p1, @p2)", redemptionID, subID)
+		if err != nil {
+			slog.Error("gagal insert redemption_items", "error", err)
+		}
 	}
 
 	// Commit
