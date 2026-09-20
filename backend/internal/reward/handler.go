@@ -2,6 +2,7 @@ package reward
 
 import (
 	"database/sql"
+	"fmt"
 	"log/slog"
 	"net/http"
 	"strconv"
@@ -97,6 +98,20 @@ func (h *RewardHandler) GetRewards(c *gin.Context) {
 	})
 }
 
+func (h *RewardHandler) generateKembalianID() (string, error) {
+	dateStr := time.Now().Format("01")
+	prefix := "RET" + dateStr
+	var seq int
+	err := h.db.QueryRow(
+		"SELECT COUNT(*) FROM activity_submissions WHERE grow_id LIKE @p1",
+		prefix+"%",
+	).Scan(&seq)
+	if err != nil {
+		return "", err
+	}
+	return fmt.Sprintf("%s%03d", prefix, seq+1), nil
+}
+
 // POST /api/rewards/redeem/:id — with race-condition protection via SQL Server row lock
 func (h *RewardHandler) Redeem(c *gin.Context) {
 	rewardID := c.Param("id")
@@ -162,7 +177,7 @@ func (h *RewardHandler) Redeem(c *gin.Context) {
 		inClause += fmt.Sprintf("@p%d", i+2)
 	}
 
-	query := fmt.Sprintf("SELECT ISNULL(SUM(points_awarded), 0) FROM activity_submissions WHERE npk = @p1 AND status = 'APPROVED' AND is_spent = 0 AND deleted_at IS NULL AND id IN (%s)", inClause)
+	query := fmt.Sprintf("SELECT ISNULL(SUM(points_awarded), 0) FROM activity_submissions WHERE npk = @p1 AND status = 'APPROVED' AND (is_spent = 0 OR is_spent IS NULL) AND deleted_at IS NULL AND id IN (%s)", inClause)
 	
 	args := []interface{}{npk} 
 	for _, id := range req.SubmissionIDs {
@@ -218,6 +233,20 @@ func (h *RewardHandler) Redeem(c *gin.Context) {
 		}
 	}
 
+	excess := totalSelectedPoints - pointsRequired
+	if excess > 0 {
+		kembalianID, _ := h.generateKembalianID()
+		_, err = tx.Exec(`
+			INSERT INTO activity_submissions 
+			(grow_id, npk, user_name, department, activity_id, activity_date, status, points_awarded, is_spent, created_at, updated_at, reviewed_by_npk, reviewed_at, custom_activity_type)
+			SELECT TOP 1 @p1, npk, user_name, department, activity_id, GETDATE(), 'APPROVED', @p2, 0, GETDATE(), GETDATE(), 'system', GETDATE(), 'Sisa Poin Penukaran'
+			FROM activity_submissions WHERE id = @p3
+		`, kembalianID, excess, req.SubmissionIDs[0])
+		if err != nil {
+			slog.Error("gagal membuat kembalian tiket poin", "error", err)
+		}
+	}
+
 	// Commit
 	if err = tx.Commit(); err != nil {
 		slog.Error("gagal menyelesaikan transaksi", "error", err)
@@ -230,7 +259,7 @@ func (h *RewardHandler) Redeem(c *gin.Context) {
 		"redemption_id":     redemptionID,
 		"reward_title":      title,
 		"points_spent":      pointsRequired,
-		"remaining_balance": balance - pointsRequired,
+		"remaining_balance": totalSelectedPoints - pointsRequired,
 	})
 }
 

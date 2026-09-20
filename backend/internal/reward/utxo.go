@@ -17,10 +17,10 @@ func (h *RewardHandler) GetAvailablePoints(c *gin.Context) {
 	npk := c.GetString("npk")
 
 	rows, err := h.db.Query(`
-		SELECT s.id, s.grow_id, a.name, s.points_awarded, s.created_at
+		SELECT s.id, s.grow_id, ISNULL(s.custom_activity_type, a.name), s.points_awarded, s.created_at
 		FROM activity_submissions s
 		JOIN activities a ON s.activity_id = a.id
-		WHERE s.npk = @p1 AND s.status = 'APPROVED' AND s.is_spent = 0 AND s.deleted_at IS NULL
+		WHERE s.npk = @p1 AND s.status = 'APPROVED' AND (s.is_spent = 0 OR s.is_spent IS NULL) AND s.deleted_at IS NULL
 		ORDER BY s.created_at ASC
 	`, npk)
 	if err != nil {

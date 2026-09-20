@@ -300,7 +300,7 @@ func (h *SubmissionHandler) MySubmissions(c *gin.Context) {
 		JOIN activities a ON s.activity_id = a.id
 		JOIN categories cat ON a.category_id = cat.id
 		%s
-		ORDER BY s.created_at DESC
+		ORDER BY s.updated_at DESC
 		OFFSET @p%d ROWS FETCH NEXT @p%d ROWS ONLY
 	`, whereClause, paramIndex, paramIndex+1)
 

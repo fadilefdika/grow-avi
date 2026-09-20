@@ -59,7 +59,7 @@
               { key: 'user_name', label: 'Nama', sortable: true },
               { key: 'activity_type', label: 'Jenis', sortable: false },
               { key: 'points', label: 'Poin', sortable: true },
-              { key: 'activity_date', label: 'Waktu Transaksi', sortable: true }
+              { key: 'activity_date', label: 'Waktu Submit', sortable: true }
             ]"
             :rows="logData"
             :totalRows="totalLogs"

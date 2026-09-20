@@ -22,128 +22,75 @@
     <!-- Main Content -->
     <div class="px-4 -mt-20 relative z-20 space-y-4">
 
-      <!-- Filter Card -->
-      <div class="bg-white rounded-2xl p-4 shadow-sm border border-gray-100">
-        <div class="flex gap-2">
-          <div class="flex-1 relative">
+      <!-- Filter Panel -->
+      <div class="bg-white p-5 rounded-2xl border border-gray-100 shadow-sm mb-6 flex flex-wrap gap-4 items-end">
+        <div class="flex-1 min-w-[200px]">
+          <label class="block text-[11px] font-semibold text-gray-500 uppercase tracking-wider mb-1.5">Cari GROW ID</label>
+          <div class="relative">
             <input
               v-model="searchQuery"
               type="text"
-              placeholder="Cari GROW ID..."
-              class="w-full pl-9 pr-3 py-2.5 bg-gray-50 border-2 border-gray-200 rounded-xl text-sm font-semibold focus:outline-none focus:border-primary focus:bg-white transition-colors placeholder-gray-300"
+              placeholder="Masukkan GROW ID..."
+              class="w-full pl-9 pr-3 py-2 bg-gray-50 border border-gray-200 rounded-lg text-sm focus:outline-none focus:border-primary focus:ring-1 focus:ring-primary transition-all"
               @input="onSearch"
             />
-            <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4 text-gray-400 absolute left-3 top-3" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
-            </svg>
+            <svg class="h-4 w-4 text-gray-400 absolute left-3 top-2.5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" /></svg>
           </div>
+        </div>
+
+        <div class="w-full sm:w-48 relative">
+          <label class="block text-[11px] font-semibold text-gray-500 uppercase tracking-wider mb-1.5">Kategori</label>
           <select
             v-model="selectedCategory"
             @change="fetchHistory(1)"
-            class="w-32 px-2 py-2.5 bg-gray-50 border-2 border-gray-200 rounded-xl text-sm font-semibold focus:outline-none focus:border-primary focus:bg-white transition-colors"
+            class="w-full px-3 py-2 bg-gray-50 border border-gray-200 rounded-lg text-sm focus:outline-none focus:border-primary focus:ring-1 focus:ring-primary transition-all appearance-none"
           >
-            <option value="">Semua</option>
+            <option value="">Semua Kategori</option>
             <option v-for="cat in categories" :key="cat.id" :value="cat.id">{{ cat.name }}</option>
           </select>
+          <svg class="w-4 h-4 text-gray-400 absolute right-3 top-[28px] pointer-events-none" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"></path></svg>
+        </div>
+        
+        <div class="flex gap-2">
+          <button @click="resetFilter" class="px-4 py-2 text-sm text-gray-600 hover:text-gray-900 bg-gray-100 hover:bg-gray-200 rounded-lg transition-colors font-medium">Reset</button>
         </div>
       </div>
 
-      <!-- List Content -->
+      <!-- Table Content -->
       <div class="bg-white rounded-2xl shadow-sm border border-gray-100 overflow-hidden">
-        <div v-if="isLoading" class="flex justify-center py-12">
-          <svg class="animate-spin h-8 w-8 text-primary" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
-            <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
-            <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
-          </svg>
-        </div>
-        
-        <div v-else-if="submissions.length === 0" class="text-center py-12 px-6">
-          <div class="w-16 h-16 bg-gray-50 rounded-2xl flex items-center justify-center mx-auto mb-3">
-            <svg xmlns="http://www.w3.org/2000/svg" class="h-8 w-8 text-gray-300" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
-            </svg>
-          </div>
-          <p class="text-sm font-black text-gray-400">Tidak ada data riwayat ditemukan.</p>
-          <p class="text-xs text-gray-300 font-semibold mt-1">Coba ubah filter pencarianmu.</p>
-        </div>
-        
-        <div v-else class="divide-y divide-gray-100">
-          <div
-            v-for="sub in submissions"
-            :key="sub.id"
-            @click="openDetail(sub)"
-            class="p-4 cursor-pointer hover:bg-blue-50/50 transition-colors group flex flex-col gap-3"
-          >
-            <div class="flex items-center justify-between">
-              <div class="flex items-center gap-3 overflow-hidden">
-                <div :class="getStatusIconBg(sub.status)" class="w-10 h-10 rounded-xl flex items-center justify-center shrink-0 shadow-sm">
-                  <svg v-if="sub.status === 'PENDING'" xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 text-amber-600" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" /></svg>
-                  <svg v-else-if="sub.status === 'APPROVED'" xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 text-green-600" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M5 13l4 4L19 7" /></svg>
-                  <svg v-else xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 text-red-500" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M6 18L18 6M6 6l12 12" /></svg>
-                </div>
-                <div class="overflow-hidden">
-                  <p class="text-xs font-bold text-gray-400 truncate">{{ sub.grow_id || 'Pengajuan Baru' }}</p>
-                  <p class="text-sm font-black text-gray-800 truncate group-hover:text-primary transition-colors mt-0.5">{{ sub.category_name }}</p>
-                </div>
-              </div>
-              <div class="flex flex-col items-end shrink-0 pl-2">
-                <span :class="getStatusBadgeClass(sub.status)" class="mb-1 text-[10px]">
-                  {{ sub.status }}
-                </span>
-                <p class="text-[10px] font-bold text-gray-400">{{ formatDate(sub.created_at) }}</p>
-              </div>
-            </div>
-            
-            <!-- Alasan Reject -->
-            <div v-if="(sub.status === 'REJECTED' || sub.status === 'REJECTED_RESUBMIT') && sub.admin_notes && (sub.admin_notes.Valid ? sub.admin_notes.String : sub.admin_notes)" class="bg-red-50 border border-red-100 rounded-xl p-3 flex flex-col gap-2 animate-fade-in">
-              <div class="flex gap-2 items-start">
-                <span class="text-sm">❌</span>
-                <div>
-                  <p class="text-[10px] font-black text-red-500 uppercase tracking-wide">Alasan Penolakan</p>
-                  <p class="text-xs font-semibold text-red-800 leading-tight mt-0.5">{{ sub.admin_notes.Valid ? sub.admin_notes.String : sub.admin_notes }}</p>
-                </div>
-              </div>
-              <div v-if="sub.status === 'REJECTED_RESUBMIT'" class="mt-1 flex justify-end">
-                <button @click.stop="$router.push({ path: '/submit', query: { revisi_id: sub.id } })" class="px-3 py-1.5 bg-orange-500 text-white rounded-lg text-xs font-bold hover:bg-orange-600 transition-colors shadow-sm">
-                  Perbaiki Pengajuan
-                </button>
-              </div>
-            </div>
-          </div>
-        </div>
+        <DataTable
+          title="Riwayat Pengajuan"
+          :columns="[
+            { key: 'grow_id', label: 'GROW ID', sortable: false },
+            { key: 'category_name', label: 'Kategori', sortable: false },
+            { key: 'status', label: 'Status', sortable: false },
+            { key: 'activity_date', label: 'Tanggal Kegiatan', sortable: false },
+            { key: 'created_at', label: 'Waktu Submit', sortable: false }
+          ]"
+          :rows="submissions"
+          :totalRows="totalItems"
+          :serverSide="true"
+          @change="onTableChange"
+          @rowClick="openDetail"
+        >
+          <template #cell-status="{ row }">
+            <span :class="getStatusBadgeClass(row.status)" class="inline-flex items-center px-2.5 py-1 rounded-full text-[10px] font-black whitespace-nowrap">
+              {{ formatStatus(row.status) }}
+            </span>
+          </template>
+          
+          <template #cell-activity_date="{ row }">
+            {{ formatDateOnly(row.activity_date) }}
+          </template>
 
-        <!-- Pagination -->
-        <div v-if="totalPages > 1" class="flex items-center justify-between border-t border-gray-100 p-4">
-          <button
-            @click="fetchHistory(currentPage - 1)"
-            :disabled="currentPage === 1"
-            :class="[
-              'px-4 py-2 rounded-xl text-sm font-bold transition-colors',
-              currentPage === 1
-                ? 'text-gray-300 cursor-not-allowed bg-gray-50'
-                : 'text-primary bg-primary/10 hover:bg-primary/20'
-            ]"
-          >
-            ← Sebelumnya
-          </button>
-          
-          <span class="text-sm font-bold text-gray-500">
-            {{ currentPage }} / {{ totalPages }}
-          </span>
-          
-          <button
-            @click="fetchHistory(currentPage + 1)"
-            :disabled="currentPage === totalPages"
-            :class="[
-              'px-4 py-2 rounded-xl text-sm font-bold transition-colors',
-              currentPage === totalPages
-                ? 'text-gray-300 cursor-not-allowed bg-gray-50'
-                : 'text-primary bg-primary/10 hover:bg-primary/20'
-            ]"
-          >
-            Selanjutnya →
-          </button>
-        </div>
+          <template #cell-created_at="{ row }">
+            {{ formatDate(row.created_at) }} WIB
+          </template>
+
+          <template #actions="{ row }">
+            <button @click.stop="openDetail(row)" class="text-primary hover:text-blue-900 font-semibold bg-blue-50 hover:bg-blue-100 px-3 py-1.5 rounded-lg transition-colors text-xs whitespace-nowrap">Lihat Detail</button>
+          </template>
+        </DataTable>
       </div>
     </div>
 
@@ -254,6 +201,7 @@
 import { ref, onMounted } from 'vue';
 import { useRouter } from 'vue-router';
 import apiClient from '../../api/client';
+import DataTable from '../../components/ui/DataTable.vue';
 
 const router = useRouter();
 const submissions = ref<any[]>([]);
@@ -275,8 +223,27 @@ let searchTimeout: ReturnType<typeof setTimeout>;
 const onSearch = () => {
   clearTimeout(searchTimeout);
   searchTimeout = setTimeout(() => {
+    tableParams.page = 1;
     fetchHistory(1);
   }, 500);
+};
+
+let tableParams = {
+  page: 1,
+  limit: 10
+};
+
+const onTableChange = (params: any) => {
+  tableParams.page = params.page;
+  tableParams.limit = params.limit;
+  fetchHistory(params.page);
+};
+
+const resetFilter = () => {
+  searchQuery.value = '';
+  selectedCategory.value = '';
+  tableParams.page = 1;
+  fetchHistory(1);
 };
 
 const fetchCategories = async () => {
@@ -293,7 +260,7 @@ const fetchHistory = async (page: number) => {
     isLoading.value = true;
     currentPage.value = page;
     
-    let url = `/submissions/me?page=${page}&limit=10`;
+    let url = `/submissions/me?page=${page}&limit=${tableParams.limit}`;
     if (searchQuery.value) url += `&search=${encodeURIComponent(searchQuery.value)}`;
     if (selectedCategory.value) url += `&category_id=${selectedCategory.value}`;
     
@@ -363,9 +330,15 @@ const getStatusIconBg = (status: string) => {
 const getStatusBadgeClass = (status: string) => {
   switch (status) {
     case 'APPROVED': return 'badge-approved';
-    case 'REJECTED': return 'badge-rejected';
+    case 'REJECTED': 
+    case 'REJECTED_RESUBMIT': return 'badge-rejected';
     default: return 'badge-pending';
   }
+};
+
+const formatStatus = (status: string) => {
+  if (status === 'REJECTED_RESUBMIT') return 'REJECTED (REVISI)';
+  return status;
 };
 
 onMounted(() => {

@@ -115,7 +115,6 @@
             </div>
           </div>
         </div>
-        </div>
       </div>
 
       <!-- Dropdown Overlay to catch outside clicks -->

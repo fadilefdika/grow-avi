@@ -95,11 +95,14 @@
       </div>
 
       <form @submit.prevent="submitForm">
+        <!-- Dropdown Overlay -->
+        <div v-if="showCategoryDropdown || showActivityDropdown" @click="closeDropdowns" class="fixed inset-0 z-30"></div>
+
         <!-- Data Diri Section -->
-        <div class="card-game p-6 mb-8 relative overflow-hidden bg-white/90 backdrop-blur-sm">
+        <div class="card-game p-6 mb-8 relative overflow-hidden bg-white/90 backdrop-blur-sm z-10">
           <div class="absolute top-0 right-0 w-32 h-32 bg-blue-100 rounded-full blur-3xl opacity-50 -mr-10 -mt-10 pointer-events-none"></div>
           <h2 class="text-lg font-black text-gray-900 mb-5 relative z-10 flex items-center gap-2">
-            <span class="text-xl">👤</span> Profil Pengaju
+            <span class="text-xl">👤</span> Profil
           </h2>
           <div class="grid grid-cols-1 md:grid-cols-3 gap-4 relative z-10">
             <div>
@@ -133,41 +136,27 @@
         </div>
 
         <!-- Category Section -->
-        <div class="card-game p-6 mb-8 relative bg-white">
+        <div class="card-game p-6 mb-8 relative bg-white z-40">
           <label class="block text-lg font-black text-gray-900 mb-5 flex items-center gap-2">
             <span class="text-xl">🎯</span> Pilih Kategori <span class="text-red-500 text-2xl leading-none">*</span>
           </label>
-          <div class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-3">
-            <label
-              v-for="cat in categories"
-              :key="cat.id"
-              class="relative block rounded-2xl border-2 p-4 cursor-pointer transition-all duration-200"
-              :class="form.categoryId === cat.id ? 'border-primary bg-blue-50 ring-2 ring-primary ring-opacity-20 shadow-md translate-y-[-2px]' : 'border-gray-200 bg-white hover:border-blue-300 hover:bg-gray-50 hover:shadow-sm'"
-            >
-              <input
-                type="radio"
-                v-model="form.categoryId"
-                :value="cat.id"
-                class="sr-only"
-                required
-              />
-              <div class="flex items-center justify-between">
-                <span class="font-bold text-sm" :class="form.categoryId === cat.id ? 'text-primary' : 'text-gray-700'">
-                  {{ cat.name }}
-                </span>
-                <div v-if="form.categoryId === cat.id" class="w-5 h-5 rounded-full bg-primary text-white flex items-center justify-center">
-                  <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="3" d="M5 13l4 4L19 7"></path></svg>
-                </div>
-                <div v-else class="w-5 h-5 rounded-full border-2 border-gray-300"></div>
+          <div class="relative">
+            <button type="button" @click="showCategoryDropdown = !showCategoryDropdown; showActivityDropdown = false" class="w-full bg-gray-50 border-2 border-gray-200 text-gray-700 rounded-xl px-4 py-3.5 text-sm font-bold flex justify-between items-center transition-colors hover:border-primary/50 focus:outline-none" :class="{'border-primary': showCategoryDropdown}">
+              <span class="truncate pr-2">{{ selectedCategoryName || 'Pilih Kategori...' }}</span>
+              <svg class="w-5 h-5 text-gray-400 shrink-0 transition-transform" :class="{'rotate-180': showCategoryDropdown}" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"></path></svg>
+            </button>
+            <div v-if="showCategoryDropdown" class="absolute z-50 w-full mt-2 bg-white border border-gray-100 rounded-xl shadow-xl max-h-60 overflow-y-auto overflow-x-hidden p-1 animate-fade-in">
+              <div v-for="cat in categories" :key="cat.id" @click="selectCategory(cat.id)" class="px-4 py-3 text-sm font-bold rounded-lg hover:bg-blue-50 cursor-pointer transition-colors" :class="form.categoryId === cat.id ? 'text-primary bg-blue-50' : 'text-gray-600'">
+                {{ cat.name }}
               </div>
-            </label>
+            </div>
           </div>
         </div>
 
         <!-- Activity Section -->
         <div
           v-if="form.categoryId"
-          class="card-game p-6 mb-8 relative bg-white animate-slide-up"
+          class="card-game p-6 mb-8 relative bg-white animate-slide-up z-30"
         >
           <div class="mb-5">
             <label class="block text-lg font-black text-gray-900 flex items-center gap-2">
@@ -178,67 +167,30 @@
             </div>
           </div>
 
-          <div class="grid grid-cols-1 sm:grid-cols-2 gap-3 mt-4">
-            <template v-for="act in filteredActivities" :key="act.id">
-              <label
-                v-if="!act.is_custom_input"
-                class="relative block rounded-2xl border-2 p-4 cursor-pointer transition-all duration-200"
-                :class="form.activityId === act.id ? 'border-primary bg-blue-50 ring-2 ring-primary ring-opacity-20 shadow-md translate-y-[-2px]' : 'border-gray-200 bg-white hover:border-blue-300 hover:bg-gray-50'"
-              >
-                <input
-                  type="radio"
-                  v-model="form.activityId"
-                  :value="act.id"
-                  class="sr-only"
-                  required
-                />
-                <div class="flex items-start">
-                  <div class="flex-1 pr-3">
-                    <span class="font-bold text-sm block" :class="form.activityId === act.id ? 'text-primary' : 'text-gray-700'">
-                      {{ act.name }}
-                    </span>
-                  </div>
-                  <div v-if="form.activityId === act.id" class="w-5 h-5 rounded-full bg-primary text-white flex items-center justify-center shrink-0 mt-0.5">
-                    <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="3" d="M5 13l4 4L19 7"></path></svg>
-                  </div>
-                  <div v-else class="w-5 h-5 rounded-full border-2 border-gray-300 shrink-0 mt-0.5"></div>
-                </div>
-              </label>
+          <div class="relative mt-4">
+            <button type="button" @click="showActivityDropdown = !showActivityDropdown; showCategoryDropdown = false" class="w-full bg-gray-50 border-2 border-gray-200 text-gray-700 rounded-xl px-4 py-3.5 text-sm font-bold flex justify-between items-center transition-colors hover:border-primary/50 focus:outline-none" :class="{'border-primary': showActivityDropdown}">
+              <span class="truncate pr-2">{{ selectedActivityName || 'Pilih Kegiatan / Aktivitas...' }}</span>
+              <svg class="w-5 h-5 text-gray-400 shrink-0 transition-transform" :class="{'rotate-180': showActivityDropdown}" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"></path></svg>
+            </button>
+            <div v-if="showActivityDropdown" class="absolute z-50 w-full mt-2 bg-white border border-gray-100 rounded-xl shadow-xl max-h-60 overflow-y-auto overflow-x-hidden p-1 animate-fade-in">
+              <div v-for="act in filteredActivities" :key="act.id" @click="selectActivity(act)" class="px-4 py-3 text-sm font-bold rounded-lg hover:bg-blue-50 cursor-pointer transition-colors" :class="form.activityId === act.id ? 'text-primary bg-blue-50' : 'text-gray-600'">
+                {{ act.name }}
+              </div>
+            </div>
+          </div>
 
-              <!-- Yang lain option -->
-              <label
-                v-else
-                class="relative block rounded-2xl border-2 p-4 cursor-pointer transition-all duration-200 sm:col-span-2"
-                :class="form.activityId === act.id ? 'border-primary bg-blue-50 ring-2 ring-primary ring-opacity-20 shadow-md' : 'border-gray-200 bg-white hover:border-blue-300 hover:bg-gray-50'"
-              >
-                <input
-                  type="radio"
-                  v-model="form.activityId"
-                  :value="act.id"
-                  class="sr-only"
-                  required
-                />
-                <div class="flex items-start">
-                  <div class="flex-1 pr-3 flex flex-col xs:flex-row xs:items-center gap-3">
-                    <span class="font-bold text-sm whitespace-nowrap shrink-0 mt-2 xs:mt-0" :class="form.activityId === act.id ? 'text-primary' : 'text-gray-700'">
-                      {{ act.name }}:
-                    </span>
-                    <input
-                      type="text"
-                      v-model="form.customActivityType"
-                      :disabled="form.activityId !== act.id"
-                      :required="form.activityId === act.id"
-                      class="flex-1 w-full border-2 border-gray-200 rounded-xl focus:border-primary focus:ring-2 focus:ring-primary/20 bg-white px-3 py-2 text-sm font-semibold transition-all disabled:opacity-50 disabled:bg-gray-100"
-                      placeholder="Sebutkan kegiatan..."
-                    />
-                  </div>
-                  <div v-if="form.activityId === act.id" class="w-5 h-5 rounded-full bg-primary text-white flex items-center justify-center shrink-0 mt-2.5 xs:mt-1.5">
-                    <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="3" d="M5 13l4 4L19 7"></path></svg>
-                  </div>
-                  <div v-else class="w-5 h-5 rounded-full border-2 border-gray-300 shrink-0 mt-2.5 xs:mt-1.5"></div>
-                </div>
-              </label>
-            </template>
+          <!-- Custom Activity Input -->
+          <div v-if="isCustomActivitySelected" class="mt-4 animate-slide-up">
+            <label class="block text-sm font-bold text-gray-700 mb-2">
+              Sebutkan Kegiatan <span class="text-red-500">*</span>
+            </label>
+            <input
+              type="text"
+              v-model="form.customActivityType"
+              required
+              class="w-full border-2 border-gray-200 rounded-xl focus:border-primary focus:ring-2 focus:ring-primary/20 bg-white px-4 py-3.5 text-sm font-semibold transition-all"
+              placeholder="Sebutkan kegiatan..."
+            />
           </div>
         </div>
 
@@ -281,7 +233,7 @@
             <!-- Custom Reference (Only for SS / Innovation) -->
             <div v-if="isSubmitSS">
               <label class="block text-sm font-bold text-gray-700 mb-2">
-                Nomor SS / Referensi <span class="text-red-500">*</span>
+                Nomor SS<span class="text-red-500">*</span>
               </label>
               <input
                 type="text"
@@ -293,7 +245,7 @@
             </div>
 
             <!-- Evidence Upload -->
-            <div v-if="!isSubmitSS">
+            <div>
               <label class="block text-sm font-bold text-gray-700 mb-2">
                 Lampiran File Pendukung <span class="text-red-500">*</span>
               </label>
@@ -488,6 +440,43 @@ const isSubmitSS = computed(() => {
   const act = allActivities.value.find(a => a.id === form.value.activityId);
   return act && act.name === 'Submit SS';
 });
+
+const showCategoryDropdown = ref(false);
+const showActivityDropdown = ref(false);
+
+const selectedCategoryName = computed(() => {
+  const cat = categories.value.find(c => c.id === form.value.categoryId);
+  return cat ? cat.name : '';
+});
+
+const selectedActivityName = computed(() => {
+  const act = allActivities.value.find(a => a.id === form.value.activityId);
+  return act ? act.name : '';
+});
+
+const isCustomActivitySelected = computed(() => {
+  const act = allActivities.value.find(a => a.id === form.value.activityId);
+  return act ? act.is_custom_input : false;
+});
+
+const selectCategory = (id: number) => {
+  form.value.categoryId = id;
+  form.value.activityId = ""; 
+  showCategoryDropdown.value = false;
+};
+
+const selectActivity = (act: any) => {
+  form.value.activityId = act.id;
+  if (!act.is_custom_input) {
+    form.value.customActivityType = '';
+  }
+  showActivityDropdown.value = false;
+};
+
+const closeDropdowns = () => {
+  showCategoryDropdown.value = false;
+  showActivityDropdown.value = false;
+};
 
 const triggerFileInput = () => {
   if (fileInput.value) {
