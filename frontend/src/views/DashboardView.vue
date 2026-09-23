@@ -4,13 +4,40 @@
     <div class="hero-gradient pt-12 pb-28 px-6 relative overflow-hidden">
       <!-- Background decorative elements -->
       <div class="absolute inset-0 overflow-hidden pointer-events-none">
-        <div class="absolute -top-10 -right-10 w-48 h-48 rounded-full opacity-10 animate-float" style="background: radial-gradient(circle, #FFA64D, transparent);"></div>
-        <div class="absolute top-20 -left-8 w-32 h-32 rounded-full opacity-10 animate-float" style="background: radial-gradient(circle, #1CB0F6, transparent); animation-delay: 1s;"></div>
-        <div class="absolute bottom-0 right-1/3 w-24 h-24 rounded-full opacity-10" style="background: radial-gradient(circle, #fff, transparent);"></div>
+        <!-- Awan -->
+        <img
+          src="/img/awan-dashboard.png"
+          alt=""
+          class="absolute -top-4 left-0 w-20 opacity-90 animate-float opacity-60"
+        />
+        <!-- Uang -->
+        <img
+          src="/img/uang-dashboard.png"
+          alt=""
+          class="absolute -top-6 right-2 w-32 opacity-95 animate-float"
+          style="animation-delay: 1s;"
+        />
+        <!-- Bunga kiri, mentok bawah -->
+        <img
+          src="/img/bunga-dashboard.png"
+          alt=""
+          class="absolute -bottom-12 -left-4 w-32 opacity-90 z-10"
+        />
+        <!-- Bunga kanan, mentok bawah -->
+        <img
+          src="/img/bunga-dashboard.png"
+          alt=""
+          class="absolute -bottom-12 -right-4 w-32 opacity-90 -scale-x-100 z-10"
+        />
+
+        <!-- Gradient overlay biru → transparan, memudar ke atas -->
+        <div
+          class="absolute bottom-0 left-0 w-full h-20 bg-gradient-to-t from-[#0D47A1]/90 via-[#1E6FA8]/40 to-transparent z-20"
+        ></div>
       </div>
 
-      <div class="flex justify-between items-start gap-3 relative z-10">
-        <!-- Name section: min-w-0 agar flex tidak overflow -->
+      <div class="flex justify-between items-center gap-3 relative z-10 min-h-[64px]">
+        <!-- Name section -->
         <div class="min-w-0 flex-1">
           <p class="text-white/70 text-sm font-semibold mb-0.5">Halo, 👋</p>
           <h1 class="text-white text-xl font-black leading-tight truncate">{{ formatName(auth.user?.name) || auth.user?.npk || 'Karyawan' }}</h1>
