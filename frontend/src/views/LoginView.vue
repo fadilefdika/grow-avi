@@ -1,74 +1,68 @@
 <template>
-  <div class="min-h-screen relative overflow-hidden flex items-center justify-center p-4" style="background: linear-gradient(135deg, #002f4e 0%, #004f82 35%, #0069AA 65%, #0090d4 100%);">
-    
-    <!-- Animated Background Shapes -->
-    <div class="absolute inset-0 overflow-hidden pointer-events-none">
-      <div class="absolute -top-20 -left-20 w-80 h-80 rounded-full opacity-10 animate-float" style="background: radial-gradient(circle, #1CB0F6, transparent); animation-delay: 0s;"></div>
-      <div class="absolute top-1/4 -right-16 w-64 h-64 rounded-full opacity-10 animate-float" style="background: radial-gradient(circle, #FFA64D, transparent); animation-delay: 1.5s;"></div>
-      <div class="absolute -bottom-20 left-1/4 w-96 h-96 rounded-full opacity-8 animate-float" style="background: radial-gradient(circle, #0069AA, transparent); animation-delay: 0.8s;"></div>
-      <!-- Decorative dots grid -->
-      <div class="absolute top-8 right-8 grid grid-cols-4 gap-3 opacity-20">
-        <div v-for="i in 16" :key="i" class="w-1.5 h-1.5 rounded-full bg-white"></div>
-      </div>
-      <div class="absolute bottom-12 left-8 grid grid-cols-4 gap-3 opacity-20">
-        <div v-for="i in 12" :key="i" class="w-1.5 h-1.5 rounded-full bg-white"></div>
-      </div>
-    </div>
+  <div
+    class="h-screen w-full flex flex-col items-center justify-between overflow-hidden relative"
+    style="background: linear-gradient(180deg, #D9F1FF 0%, #3CA5E1 100%);"
+  >
+    <!-- Background Clouds -->
+    <img
+      src="/img/awan-login-pojok-kiri.png"
+      alt=""
+      class="absolute top-0 left-0 w-44 md:w-72 opacity-90 pointer-events-none"
+    />
+    <img
+      src="/img/awan-login-pojok-kanan.png"
+      alt=""
+      class="absolute top-44 right-0 w-40 md:w-72 opacity-90 pointer-events-none"
+    />
 
-    <!-- Login Card -->
-    <div class="relative w-full max-w-sm animate-pop">
-      <!-- Logo & Brand Header -->
-      <div class="text-center mb-6">
-        
-        <h1 class="text-2xl font-black text-white tracking-tight">
-          GROW <span class="text-secondary">AVI</span>
-        </h1>
-        <p class="text-white/70 text-sm mt-1 font-medium">
-          {{ loginType === 'employee' ? 'Kumpulkan poin, raih hadiahmu! 🏆' : 'Panel Administrator' }}
-        </p>
-      </div>
+    <!-- Header + Card (grup atas) -->
+    <div class="relative z-20 flex flex-col items-center w-full px-4 pt-20 md:pt-10 lg:pt-2">
+      <img
+        src="/img/Judul-GROW.png"
+        alt="GROW Logo"
+        class="h-40 md:h-28 lg:h-44 mb-4 drop-shadow-md"
+      />
 
-      <!-- Main Card -->
-      <div class="bg-white rounded-3xl shadow-2xl overflow-hidden">
-        <!-- Tab Toggle -->
-        <div class="flex p-2 gap-1 bg-gray-50 border-b border-gray-100">
+      <div class="w-full max-w-sm md:max-w-md bg-white rounded-3xl shadow-2xl p-5 md:p-6">
+        <!-- Tab Switcher -->
+        <div class="flex p-1 gap-1 bg-gray-100 rounded-full mb-5 border border-gray-200">
           <button
-            id="tab-employee"
             @click="loginType = 'employee'"
             :class="[
-              'flex-1 py-2.5 text-sm font-bold rounded-xl transition-all duration-300',
+              'flex-1 py-2 text-sm font-bold rounded-full transition-all duration-300',
               loginType === 'employee'
-                ? 'bg-primary text-white shadow-md'
-                : 'text-gray-500 hover:text-gray-700 hover:bg-gray-100'
+                ? 'bg-[#1E6FA8] text-white shadow-md'
+                : 'text-gray-500 hover:text-gray-700'
             ]"
           >
-            👤 Karyawan
+            Karyawan
           </button>
           <button
-            id="tab-admin"
             @click="loginType = 'admin'"
             :class="[
-              'flex-1 py-2.5 text-sm font-bold rounded-xl transition-all duration-300',
+              'flex-1 py-2 text-sm font-bold rounded-full transition-all duration-300 flex items-center justify-center gap-1.5',
               loginType === 'admin'
-                ? 'bg-gray-800 text-white shadow-md'
-                : 'text-gray-500 hover:text-gray-700 hover:bg-gray-100'
+                ? 'bg-[#1E6FA8] text-white shadow-md'
+                : 'text-[#1E6FA8] hover:bg-blue-50'
             ]"
           >
-            🔐 Admin
+            <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m5.618-4.016A11.955 11.955 0 0112 2.944a11.955 11.955 0 01-8.618 3.04A12.02 12.02 0 003 9c0 5.591 3.824 10.29 9 11.622 5.176-1.332 9-6.03 9-11.622 0-1.042-.133-2.052-.382-3.016z" />
+            </svg>
+            Admin
           </button>
         </div>
 
-        <!-- Form -->
-        <form class="p-6 space-y-5" @submit.prevent="handleLogin">
-          <!-- Welcome text -->
-          <div class="text-center py-1">
-            <h2 class="text-xl font-black text-gray-900">Selamat Datang!</h2>
-            <p class="text-gray-500 text-sm font-medium mt-0.5">Masuk untuk mulai perjalananmu</p>
-          </div>
+        <div class="text-center mb-5">
+          <h2 class="text-xl font-black text-[#1E6FA8]">Selamat Datang!</h2>
+          <p class="text-gray-500 text-sm font-medium mt-1">Masuk untuk memulai perjalananmu</p>
+        </div>
 
-          <!-- NPK / Username Field -->
+        <!-- Form -->
+        <form class="space-y-4" @submit.prevent="handleLogin">
+          <!-- NPK Field -->
           <div class="space-y-1.5">
-            <label :for="loginType === 'employee' ? 'npk' : 'username'" class="block text-sm font-bold text-gray-700">
+            <label class="block text-sm font-bold text-[#1E6FA8] ml-2">
               {{ loginType === 'employee' ? 'NPK' : 'Username' }}
             </label>
             <div class="relative">
@@ -78,14 +72,10 @@
                 </svg>
               </div>
               <input
-                :id="loginType === 'employee' ? 'npk' : 'username'"
-                :name="loginType === 'employee' ? 'npk' : 'username'"
                 type="text"
-                :inputmode="loginType === 'employee' ? 'numeric' : 'text'"
-                :pattern="loginType === 'employee' ? '[0-9]*' : undefined"
                 required
                 v-model="usernameInput"
-                class="w-full pl-11 pr-4 py-3.5 border-2 border-gray-200 rounded-2xl text-gray-900 font-semibold text-sm placeholder-gray-400 focus:outline-none focus:border-primary transition-all duration-200 bg-gray-50 focus:bg-white [appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none"
+                class="w-full pl-11 pr-4 py-3 border border-[#1E6FA8]/40 rounded-full text-gray-900 font-semibold text-sm placeholder-gray-400 focus:outline-none focus:border-[#1E6FA8] focus:ring-1 focus:ring-[#1E6FA8] transition-all bg-white shadow-sm"
                 :placeholder="loginType === 'employee' ? 'Masukkan NPK Anda' : 'Masukkan Username'"
               />
             </div>
@@ -93,8 +83,8 @@
 
           <!-- Password Field -->
           <div class="space-y-1.5">
-            <label for="password" class="block text-sm font-bold text-gray-700">
-              {{ loginType === 'employee' ? 'Password (Awork)' : 'Password' }}
+            <label class="block text-sm font-bold text-[#1E6FA8] ml-2">
+              Password (A-Work)
             </label>
             <div class="relative">
               <div class="absolute inset-y-0 left-0 pl-4 flex items-center pointer-events-none">
@@ -103,19 +93,16 @@
                 </svg>
               </div>
               <input
-                id="password"
-                name="password"
                 :type="showPassword ? 'text' : 'password'"
                 required
                 v-model="passwordInput"
-                class="w-full pl-11 pr-12 py-3.5 border-2 border-gray-200 rounded-2xl text-gray-900 font-semibold text-sm placeholder-gray-400 focus:outline-none focus:border-primary transition-all duration-200 bg-gray-50 focus:bg-white"
-                :placeholder="loginType === 'employee' ? 'Password Awork Anda' : 'Password Admin'"
+                class="w-full pl-11 pr-12 py-3 border border-[#1E6FA8]/40 rounded-full text-gray-900 font-semibold text-sm placeholder-gray-400 focus:outline-none focus:border-[#1E6FA8] focus:ring-1 focus:ring-[#1E6FA8] transition-all bg-white shadow-sm"
+                placeholder="Password"
               />
               <button
                 type="button"
                 @click="showPassword = !showPassword"
-                class="absolute inset-y-0 right-0 pr-4 flex items-center text-gray-400 hover:text-primary transition-colors focus:outline-none"
-                :aria-label="showPassword ? 'Sembunyikan password' : 'Tampilkan password'"
+                class="absolute inset-y-0 right-0 pr-4 flex items-center text-gray-400 hover:text-[#1E6FA8] transition-colors focus:outline-none"
               >
                 <svg v-if="!showPassword" xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" viewBox="0 0 20 20" fill="currentColor">
                   <path d="M10 12a2 2 0 100-4 2 2 0 000 4z" />
@@ -131,32 +118,120 @@
 
           <!-- Submit Button -->
           <button
-            id="btn-login"
             type="submit"
             :disabled="isLoading"
-            :class="[
-              'w-full py-4 font-black text-base rounded-2xl transition-all duration-200 text-white disabled:opacity-60 disabled:cursor-not-allowed',
-              loginType === 'employee' ? 'btn-game-primary' : 'bg-gray-800 btn-game'
-            ]"
-            :style="loginType !== 'employee' ? 'box-shadow: 0 6px 0 #111827;' : ''"
+            class="w-full py-3.5 mt-2 font-bold text-white rounded-full bg-[#1E6FA8] hover:bg-[#0D47A1] transition-all duration-300 disabled:opacity-70 flex justify-center items-center shadow-lg hover:shadow-xl"
           >
-            <span v-if="isLoading" class="flex items-center justify-center gap-2">
+            <span v-if="isLoading" class="flex items-center gap-2">
               <svg class="animate-spin h-5 w-5 text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
                 <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
                 <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
               </svg>
               Memproses...
             </span>
-            <span v-else>
-              {{ loginType === 'employee' ? 'Masuk & Mulai Kumpulkan Poin 🚀' : 'Masuk sebagai Admin' }}
-            </span>
+            <span v-else>Masuk</span>
           </button>
         </form>
       </div>
+    </div>
 
-      <!-- Footer branding -->
-      <p class="text-center text-white/50 text-xs font-medium mt-5">
-        © 2026 PT Astra Visteon Indonesia
+        <!-- ===================== DEKORASI MOBILE (overlap penuh, solid) ===================== -->
+    <div
+      class="flex md:hidden relative z-10 w-full h-56 pointer-events-none overflow-visible"
+    >
+      <!-- kiri: list icon -->
+      <img
+        src="/img/list-login-pojok-kiri.png"
+        alt=""
+        class="absolute left-0 -bottom-8 w-32 z-10"
+      />
+
+      <!-- raket + kamera (tengah-kiri) -->
+      <img
+        src="/img/raket-samping-kamera.png"
+        alt=""
+        class="absolute left-16 -bottom-8 w-52 z-20"
+      />
+
+      <!-- helm -->
+      <img
+        src="/img/helm-login-diatas-raket.png"
+        alt=""
+        class="absolute left-9 -bottom-2 w-48 z-30"
+      />
+
+      <!-- kamera + bola -->
+      <img
+        src="/img/kamera-login-samping-bola.png"
+        alt=""
+        class="absolute right-10 -bottom-8 w-56 z-50"
+      />
+
+      <!-- buku, menindih kamera -->
+      <img
+        src="/img/buku-login-diatas-kamera.png"
+        alt=""
+        class="absolute right-24 -bottom-5 w-52 z-30"
+      />
+
+      <!-- bola pojok kanan bawah -->
+      <img
+        src="/img/bola-login-pojok-kanan-bawah.png"
+        alt=""
+        class="absolute right-0 -bottom-10 w-28 z-40"
+      />
+    </div>
+
+    <!-- Gradient overlay biru → transparan, relatif ke SELURUH LAYAR, mentok bawah -->
+    <div
+      class="absolute bottom-0 left-0 w-full h-32 md:h-40 lg:h-48 xl:h-56 bg-gradient-to-t from-[#0D47A1]/85 via-[#1E6FA8]/40 to-transparent z-[15] pointer-events-none"
+    ></div>
+
+    <!-- ===================== DEKORASI DESKTOP (dua cluster pojok) ===================== -->
+    <div class="hidden md:block absolute inset-0 pointer-events-none z-10 overflow-hidden">
+      <!-- Cluster kiri-bawah -->
+      <div class="absolute bottom-0 left-0 flex items-end">
+        <img
+          src="/img/list-login-pojok-kiri.png"
+          alt=""
+          class="w-44 lg:w-52 xl:w-60 2xl:w-72 -ml-6 lg:-ml-8 translate-y-4"
+        />
+        <img
+          src="/img/kamera-login-samping-bola.png"
+          alt=""
+          class="w-32 lg:w-40 xl:w-48 2xl:w-56 -ml-8 lg:-ml-10"
+        />
+        <img
+          src="/img/raket-samping-kamera.png"
+          alt=""
+          class="w-28 lg:w-36 xl:w-40 2xl:w-48 -ml-6 lg:-ml-8"
+        />
+      </div>
+
+      <!-- Cluster kanan-bawah -->
+      <div class="absolute bottom-0 right-0 flex items-end">
+        <img
+          src="/img/buku-login-diatas-kamera.png"
+          alt=""
+          class="w-32 lg:w-40 xl:w-48 2xl:w-56 -mr-2 translate-y-2"
+        />
+        <img
+          src="/img/helm-login-diatas-raket.png"
+          alt=""
+          class="w-28 lg:w-36 xl:w-44 2xl:w-52 -mr-2"
+        />
+        <img
+          src="/img/bola-login-pojok-kanan-bawah.png"
+          alt=""
+          class="w-52 lg:w-64 xl:w-72 2xl:w-80 -mr-8 lg:-mr-10 translate-y-4"
+        />
+      </div>
+    </div>
+
+    <!-- Footer -->
+    <div class="relative z-20 w-full text-center pb-3">
+      <p class="text-white/90 text-[10px] md:text-xs font-semibold">
+        © 2026 PT ASTRA VISTEON INDONESIA
       </p>
     </div>
   </div>
@@ -240,5 +315,47 @@ const handleLogin = async () => {
 };
 </script>
 
-<style scoped></style>
+<style scoped>
+/* Keyframes untuk floating animation */
+@keyframes float {
+  0% { transform: translateY(0px); }
+  50% { transform: translateY(-10px); }
+  100% { transform: translateY(0px); }
+}
 
+@keyframes float-slow {
+  0% { transform: translateY(0px) rotate(0deg); }
+  50% { transform: translateY(-15px) rotate(2deg); }
+  100% { transform: translateY(0px) rotate(0deg); }
+}
+
+@keyframes float-delay {
+  0% { transform: translateY(0px); }
+  50% { transform: translateY(-8px); }
+  100% { transform: translateY(0px); }
+}
+
+@keyframes float-slow-delay {
+  0% { transform: translateY(0px) rotate(0deg); }
+  50% { transform: translateY(-12px) rotate(-2deg); }
+  100% { transform: translateY(0px) rotate(0deg); }
+}
+
+.animate-float {
+  animation: float 4s ease-in-out infinite;
+}
+
+.animate-float-slow {
+  animation: float-slow 6s ease-in-out infinite;
+}
+
+.animate-float-delay {
+  animation: float-delay 5s ease-in-out infinite;
+  animation-delay: 1.5s;
+}
+
+.animate-float-slow-delay {
+  animation: float-slow-delay 7s ease-in-out infinite;
+  animation-delay: 2s;
+}
+</style>
