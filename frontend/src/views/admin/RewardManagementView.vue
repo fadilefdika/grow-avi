@@ -11,28 +11,15 @@
           <h1 class="text-2xl font-bold text-gray-900">Manajemen Hadiah</h1>
           <p class="text-gray-500 mt-1">Kelola katalog hadiah dan pantau riwayat penukaran</p>
         </div>
-      </div>
-
-      <!-- Tabs -->
-      <div class="flex space-x-4 mb-6 border-b border-gray-200">
-        <button 
-          @click="activeTab = 'catalog'" 
-          :class="['pb-2 font-medium text-sm transition-colors', activeTab === 'catalog' ? 'border-b-2 border-primary text-primary' : 'text-gray-500 hover:text-gray-700']"
-        >
-          Katalog Hadiah
-        </button>
-        <button 
-          @click="activeTab = 'history'" 
-          :class="['pb-2 font-medium text-sm transition-colors', activeTab === 'history' ? 'border-b-2 border-primary text-primary' : 'text-gray-500 hover:text-gray-700']"
-        >
-          Riwayat Penukaran
-        </button>
+        <!-- <div class="text-right">
+          <div class="inline-flex items-center px-4 py-2 bg-blue-50 text-primary rounded-lg border border-blue-100 font-medium">
+            <svg class="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"></path></svg>
+            Nilai Tukar: 100 pts = Rp 50.000
+          </div>
+        </div> -->
       </div>
 
 
-
-      <!-- Catalog Tab -->
-      <div v-if="activeTab === 'catalog'">
         <DataTable
           title="Katalog Hadiah"
           :columns="rewardColumns"
@@ -51,40 +38,13 @@
             <span class="font-bold text-primary">{{ value }} pts</span>
           </template>
 
+
           <template #row-actions="{ row }">
             <button @click="openRewardModal(row)" class="text-blue-600 hover:text-blue-900 mr-3">Edit</button>
             <button @click="deleteReward(row.id)" class="text-red-600 hover:text-red-900">Hapus</button>
           </template>
         </DataTable>
-      </div>
 
-      <!-- History Tab -->
-      <div v-if="activeTab === 'history'">
-        <div v-if="isLoadingHistory" class="flex justify-center py-8">
-           <svg class="animate-spin h-6 w-6 text-primary" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24"><circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle><path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path></svg>
-        </div>
-        <DataTable
-          v-else
-          title="Riwayat Penukaran Hadiah"
-          :columns="redemptionColumns"
-          :rows="redemptions"
-          :server-side="true"
-          :total-rows="totalRedemptions"
-          @change="onRedemptionTableChange"
-          empty-text="Belum ada riwayat penukaran."
-        >
-          <template #cell-created_at="{ value }">
-            {{ formatDate(value) }}
-          </template>
-          <template #cell-user_name="{ row }">
-            <div class="font-medium text-gray-900">{{ row.user_name }}</div>
-            <div class="text-xs text-gray-500">{{ row.npk }} - {{ row.department }}</div>
-          </template>
-          <template #cell-points_spent="{ value }">
-            <span class="font-bold text-red-600">-{{ value }} pts</span>
-          </template>
-        </DataTable>
-      </div>
 
     </div>
 
@@ -104,10 +64,12 @@
             <label class="block text-sm font-medium text-gray-700 mb-1">Deskripsi (Opsional)</label>
             <textarea v-model="rewardForm.description" rows="2" class="w-full px-3 py-2 border border-gray-300 rounded-lg shadow-sm focus:outline-none focus:ring-1 focus:ring-primary focus:border-primary"></textarea>
           </div>
+
           <div>
             <label class="block text-sm font-medium text-gray-700 mb-1">Poin Diperlukan</label>
             <input type="number" min="0" @wheel.prevent v-model="rewardForm.points_required" class="w-full px-3 py-2 border border-gray-300 rounded-lg shadow-sm focus:outline-none focus:ring-1 focus:ring-primary focus:border-primary [appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none" />
           </div>
+
           
           <div class="flex justify-end gap-3 mt-6">
             <button @click="showRewardModal = false" class="px-4 py-2 border border-gray-300 text-gray-700 rounded-lg hover:bg-gray-100 transition-colors font-medium text-sm">Batal</button>
@@ -138,28 +100,15 @@ const rewardColumns = [
   { key: 'points_required', label: 'Poin Diperlukan' }
 ];
 
-const redemptionColumns = [
-  { key: 'created_at', label: 'Tgl Penukaran' },
-  { key: 'user_name', label: 'Karyawan' },
-  { key: 'reward_title', label: 'Hadiah' },
-  { key: 'points_spent', label: 'Poin Digunakan' }
-];
-
-const activeTab = ref<'catalog' | 'history'>('catalog');
 const rewards = ref<any[]>([]);
 const totalRewards = ref(0);
-const redemptions = ref<any[]>([]);
-const totalRedemptions = ref(0);
 
 const rewardParams = ref({ page: 1, limit: 10, search: '', sort: '', order: 'asc' });
-const redemptionParams = ref({ page: 1, limit: 10, search: '', sort: '', order: 'asc' });
-
-const isLoadingHistory = ref(false);
 const isProcessing = ref(false);
 
 const showRewardModal = ref(false);
 const editingReward = ref<any>(null);
-const rewardForm = ref({ title: '', description: '', points_required: 0 });
+const rewardForm = ref({ title: '', description: '', points_required: 0, reward_type: 'CUSTOM' });
 
 const fetchRewards = async () => {
   try {
@@ -171,34 +120,10 @@ const fetchRewards = async () => {
   }
 };
 
-const fetchRedemptions = async () => {
-  isLoadingHistory.value = true;
-  try {
-    const res = await apiClient.get('/admin/rewards/redemptions', { params: redemptionParams.value });
-    redemptions.value = res.data.data || [];
-    totalRedemptions.value = res.data.total || 0;
-  } catch (err) {
-    console.error("Gagal memuat riwayat", err);
-  } finally {
-    isLoadingHistory.value = false;
-  }
-};
-
 const onRewardTableChange = (params: any) => {
   rewardParams.value = params;
   fetchRewards();
 };
-
-const onRedemptionTableChange = (params: any) => {
-  redemptionParams.value = params;
-  fetchRedemptions();
-};
-
-watch(activeTab, (newVal) => {
-  if (newVal === 'history' && redemptions.value.length === 0) {
-    fetchRedemptions();
-  }
-});
 
 
 
@@ -208,11 +133,12 @@ const openRewardModal = (reward?: any) => {
     rewardForm.value = {
       title: reward.title,
       description: reward.description || '',
-      points_required: reward.points_required
+      points_required: reward.points_required,
+      reward_type: reward.reward_type || 'CUSTOM'
     };
   } else {
     editingReward.value = null;
-    rewardForm.value = { title: '', description: '', points_required: 0 };
+    rewardForm.value = { title: '', description: '', points_required: 0, reward_type: 'CUSTOM' };
   }
   showRewardModal.value = true;
 };

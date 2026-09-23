@@ -127,7 +127,9 @@ func main() {
 			adminGroup.PUT("/rewards/:id", rewardHandler.UpdateReward)
 			adminGroup.DELETE("/rewards/:id", rewardHandler.DeleteReward)
 			adminGroup.GET("/rewards/redemptions", rewardHandler.AllRedemptions)
+			adminGroup.GET("/redemptions/pending", rewardHandler.PendingRedemptions)
 			adminGroup.GET("/redemptions/:id", rewardHandler.GetRedemptionDetail)
+			adminGroup.POST("/redemptions/:id/approve", rewardHandler.ApproveRedemption)
 
 			// User stats
 			adminGroup.GET("/users/stats", leaderboardHandler.AdminUserStats)

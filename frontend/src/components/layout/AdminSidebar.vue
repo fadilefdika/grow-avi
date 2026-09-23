@@ -58,8 +58,11 @@ const pendingCount = ref(0);
 
 const fetchPendingCount = async () => {
   try {
-    const res = await apiClient.get('/admin/submissions/pending', { params: { limit: 1 } });
-    pendingCount.value = res.data.total || 0;
+    const [resGrow, resClaim] = await Promise.all([
+      apiClient.get('/admin/submissions/pending', { params: { limit: 1 } }),
+      apiClient.get('/admin/redemptions/pending', { params: { limit: 1 } })
+    ]);
+    pendingCount.value = (resGrow.data.total || 0) + (resClaim.data.total || 0);
   } catch (err) {
     console.error("Gagal memuat badge pending", err);
   }

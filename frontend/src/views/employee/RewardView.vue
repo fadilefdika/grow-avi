@@ -139,6 +139,47 @@
           </button>
         </li>
       </ul>
+
+      <!-- History Section -->
+      <div class="mt-10 mb-4">
+        <h2 class="text-lg font-black text-gray-800">Riwayat Penukaran</h2>
+      </div>
+
+      <div v-if="isLoadingHistory" class="text-center py-6 text-gray-400">Memuat riwayat...</div>
+      <div v-else-if="redemptionHistory.length === 0" class="bg-white rounded-2xl p-6 border border-gray-100 shadow-sm text-center">
+        <p class="text-gray-500 text-xs font-semibold">Belum ada riwayat penukaran.</p>
+      </div>
+      <ul v-else class="space-y-3">
+        <li
+          v-for="history in redemptionHistory"
+          :key="history.id"
+          class="bg-white rounded-2xl p-4 border border-gray-100 shadow-sm flex items-center justify-between gap-3"
+        >
+          <div class="flex items-center gap-3">
+            <div class="w-10 h-10 rounded-xl bg-orange-50 flex items-center justify-center text-lg shrink-0">
+              {{ getRewardEmoji(history.reward_title) }}
+            </div>
+            <div>
+              <p class="font-bold text-gray-800 text-sm">{{ history.reward_title }}</p>
+              <p class="text-[11px] text-gray-500 font-semibold">{{ formatDate(history.created_at) }}</p>
+            </div>
+          </div>
+          <div class="text-right shrink-0">
+            <p class="font-black text-primary text-sm">-{{ fmt(history.points_spent) }} pts</p>
+            <p
+              class="text-[10px] font-bold px-2 py-0.5 rounded-full inline-block mt-1"
+              :class="{
+                'bg-yellow-100 text-yellow-700': history.status === 'PENDING_REDEMPTION',
+                'bg-green-100 text-green-700': history.status === 'PROCESSED',
+                'bg-red-100 text-red-700': history.status === 'CANCELLED'
+              }"
+            >
+              {{ history.status === 'PENDING_REDEMPTION' ? 'Menunggu' : history.status === 'PROCESSED' ? 'Disetujui' : 'Dibatalkan' }}
+            </p>
+          </div>
+        </li>
+      </ul>
+
     </main>
 
     <!-- Confirm modal -->
@@ -282,10 +323,12 @@ import { useToast } from 'vue-toastification';
 const rewards = ref<any[]>([]);
 const balance = ref(0);
 const isLoading = ref(true);
+const isLoadingHistory = ref(false);
 const loadError = ref(false);
 const isRedeeming = ref(false);
 const selectedReward = ref<any>(null);
 const availablePoints = ref<any[]>([]);
+const redemptionHistory = ref<any[]>([]);
 const selectedSubmissionIds = ref<Set<number>>(new Set());
 const dialogRef = ref<HTMLElement | null>(null);
 const toast = useToast();
@@ -314,6 +357,12 @@ const isEligible = (r: any): boolean => r.stock > 0 && balance.value >= r.points
 
 const progressPct = (r: any): number =>
   r.points_required > 0 ? Math.min(100, (balance.value / r.points_required) * 100) : 0;
+
+const formatDate = (dateString: string) => {
+  if (!dateString) return '';
+  const date = new Date(dateString);
+  return date.toLocaleString('id-ID', { day: '2-digit', month: 'short', year: 'numeric', hour: '2-digit', minute: '2-digit', timeZone: 'Asia/Jakarta' }).replace(/\./g, ':');
+};
 
 /* ---------- Derived data ---------- */
 
@@ -389,6 +438,18 @@ const fetchData = async (silent = false) => {
   }
 };
 
+const fetchHistory = async () => {
+  isLoadingHistory.value = true;
+  try {
+    const res = await apiClient.get('/rewards/history');
+    redemptionHistory.value = res.data.data || [];
+  } catch (err) {
+    console.error('Gagal memuat riwayat penukaran', err);
+  } finally {
+    isLoadingHistory.value = false;
+  }
+};
+
 /* ---------- Modal ---------- */
 
 const confirmRedeem = (reward: any, event?: Event) => {
@@ -415,6 +476,8 @@ const executeRedeem = async () => {
 
     // Refresh stok dan saldo tanpa memunculkan skeleton lagi
     fetchData(true);
+    fetchHistory();
+    closeModal();
   } catch (err: any) {
     if (err.response && err.response.data && err.response.data.error) {
       toast.error(err.response.data.error);
@@ -464,6 +527,7 @@ watch(selectedReward, async (val) => {
 
 onMounted(() => {
   fetchData();
+  fetchHistory();
   document.addEventListener('keydown', onGlobalKeydown);
 });
 

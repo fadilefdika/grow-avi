@@ -21,7 +21,23 @@
         </svg>
       </div>
 
-      <div v-else>
+      <!-- Tabs -->
+      <div class="flex space-x-4 mb-6 border-b border-gray-200">
+        <button 
+          @click="activeTab = 'grow'" 
+          :class="['pb-2 font-medium text-sm transition-colors', activeTab === 'grow' ? 'border-b-2 border-primary text-primary' : 'text-gray-500 hover:text-gray-700']"
+        >
+          Antrean GROW
+        </button>
+        <button 
+          @click="activeTab = 'claim'" 
+          :class="['pb-2 font-medium text-sm transition-colors', activeTab === 'claim' ? 'border-b-2 border-primary text-primary' : 'text-gray-500 hover:text-gray-700']"
+        >
+          Antrean Klaim
+        </button>
+      </div>
+
+      <div v-if="activeTab === 'grow'">
         <DataTable
           title="Antrean Pengajuan"
           subtitle="Pengajuan dengan status MENUNGGU"
@@ -50,6 +66,34 @@
           </template>
           <template #actions="{ row }">
             <button @click="openDetail(row.id)" class="text-primary hover:text-blue-900 font-semibold bg-blue-50 hover:bg-blue-100 px-3 py-1.5 rounded-lg transition-colors">Tinjau</button>
+          </template>
+        </DataTable>
+      </div>
+
+      <!-- Claim Queue Tab -->
+      <div v-if="activeTab === 'claim'">
+        <DataTable
+          title="Antrean Klaim Hadiah"
+          subtitle="Klaim hadiah yang menunggu persetujuan admin"
+          :columns="claimColumns"
+          :rows="pendingClaims"
+          :server-side="true"
+          :total-rows="totalClaims"
+          @change="onClaimTableChange"
+          empty-text="Tidak ada antrean klaim saat ini."
+        >
+          <template #cell-created_at="{ value }">
+            {{ formatDate(value) }}
+          </template>
+          <template #cell-user_name="{ row }">
+            <div class="font-medium text-gray-900">{{ row.user_name }}</div>
+            <div class="text-xs text-gray-500">{{ row.npk }} - {{ row.department }}</div>
+          </template>
+          <template #cell-points_spent="{ value }">
+            <span class="font-bold text-red-600">-{{ value }} pts</span>
+          </template>
+          <template #actions="{ row }">
+            <button @click="approveClaim(row.id)" :disabled="isProcessing" class="text-white hover:bg-green-700 font-semibold bg-green-600 px-3 py-1.5 rounded-lg transition-colors disabled:opacity-50">Setujui</button>
           </template>
         </DataTable>
       </div>
@@ -222,10 +266,24 @@ const submissionColumns = [
   { key: 'default_points', label: 'POIN DASAR' }
 ];
 
+const claimColumns = [
+  { key: 'created_at', label: 'TGL PENGAJUAN' },
+  { key: 'user_name', label: 'Karyawan' },
+  { key: 'reward_title', label: 'Hadiah' },
+  { key: 'points_spent', label: 'Poin' }
+];
+
+const activeTab = ref<'grow' | 'claim'>('grow');
+
 const pendingQueue = ref<any[]>([]);
 const totalSubmissions = ref(0);
 const queueParams = ref({ page: 1, limit: 10, search: '', sort: '', order: 'asc' });
-const isLoading = ref(true);
+
+const pendingClaims = ref<any[]>([]);
+const totalClaims = ref(0);
+const claimParams = ref({ page: 1, limit: 10, search: '', sort: '', order: 'asc' });
+
+const isLoading = ref(false);
 
 const selectedDetail = ref<any>(null);
 const pointsOverride = ref<number>(0);
@@ -243,7 +301,20 @@ const fetchQueue = async () => {
     pendingQueue.value = res.data.data || [];
     totalSubmissions.value = res.data.total || 0;
   } catch (err) {
-    console.error("Gagal load antrean", err);
+    console.error("Gagal load antrean grow", err);
+  } finally {
+    isLoading.value = false;
+  }
+};
+
+const fetchClaims = async () => {
+  isLoading.value = true;
+  try {
+    const res = await apiClient.get('/admin/redemptions/pending', { params: claimParams.value });
+    pendingClaims.value = res.data.data || [];
+    totalClaims.value = res.data.total || 0;
+  } catch (err) {
+    console.error("Gagal load antrean klaim", err);
   } finally {
     isLoading.value = false;
   }
@@ -252,6 +323,11 @@ const fetchQueue = async () => {
 const onQueueTableChange = (params: any) => {
   queueParams.value = params;
   fetchQueue();
+};
+
+const onClaimTableChange = (params: any) => {
+  claimParams.value = params;
+  fetchClaims();
 };
 
 const openDetail = async (id: number) => {
@@ -325,6 +401,21 @@ const submitReject = async (canResubmit: boolean) => {
   }
 };
 
+const approveClaim = async (id: number) => {
+  if (!confirm('Anda yakin ingin menyetujui klaim hadiah ini?')) return;
+  isProcessing.value = true;
+  try {
+    await apiClient.post(`/admin/redemptions/${id}/approve`);
+    toast.success('Klaim hadiah berhasil disetujui');
+    fetchClaims();
+  } catch (err: any) {
+    const errorMsg = err.response?.data?.error || 'Terjadi kesalahan saat approve klaim';
+    toast.error(errorMsg);
+  } finally {
+    isProcessing.value = false;
+  }
+};
+
 const formatDate = (dateString: string) => {
   if (!dateString) return '';
   const date = new Date(dateString);
@@ -339,6 +430,16 @@ const formatDateOnly = (dateString: string) => {
   const date = new Date(year, month - 1, day);
   return date.toLocaleDateString('id-ID', { day: '2-digit', month: 'short', year: 'numeric', timeZone: 'Asia/Jakarta' });
 };
+
+import { watch } from 'vue';
+
+watch(activeTab, (newVal) => {
+  if (newVal === 'grow' && pendingQueue.value.length === 0) {
+    fetchQueue();
+  } else if (newVal === 'claim' && pendingClaims.value.length === 0) {
+    fetchClaims();
+  }
+});
 
 onMounted(() => {
   fetchQueue();

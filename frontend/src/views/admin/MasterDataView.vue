@@ -67,10 +67,16 @@
         >
           <template #action>
             <div class="flex items-center gap-2">
-              <select v-model="selectedCategoryId" @change="fetchActivities" class="border border-gray-200 rounded-lg px-3 py-1.5 text-sm focus:outline-none focus:ring-1 focus:ring-primary focus:border-primary text-gray-700 bg-gray-50">
-                <option value="">Semua Kategori</option>
-                <option v-for="cat in allCategories" :key="cat.id" :value="cat.id">{{ cat.name }}</option>
-              </select>
+              <div class="relative min-w-[200px]" ref="categoryDropdownRef">
+                <button @click.stop="toggleCategoryDropdown" class="w-full text-left bg-gray-50 border border-gray-200 text-gray-700 rounded-lg px-3 py-1.5 text-sm flex justify-between items-center transition-colors hover:border-primary/50" :class="{'border-primary': showCategoryDropdown}">
+                  <span class="truncate pr-2">{{ selectedCategoryName }}</span>
+                  <svg class="w-4 h-4 text-gray-400 shrink-0 transition-transform" :class="{'rotate-180': showCategoryDropdown}" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"></path></svg>
+                </button>
+                <div v-if="showCategoryDropdown" class="absolute z-50 w-full mt-2 bg-white border border-gray-100 rounded-xl shadow-xl max-h-60 overflow-y-auto p-1">
+                  <div @click="selectCategory('')" class="px-3 py-2 text-sm font-medium rounded-lg hover:bg-blue-50 cursor-pointer transition-colors" :class="!selectedCategoryId ? 'text-primary bg-blue-50' : 'text-gray-600'">Semua Kategori</div>
+                  <div v-for="cat in allCategories" :key="cat.id" @click="selectCategory(cat.id)" class="px-3 py-2 text-sm font-medium rounded-lg hover:bg-blue-50 cursor-pointer transition-colors" :class="selectedCategoryId === cat.id ? 'text-primary bg-blue-50' : 'text-gray-600'">{{ cat.name }}</div>
+                </div>
+              </div>
               <button @click="openActivityModal()" class="px-4 py-1.5 bg-primary text-white rounded-lg hover:bg-blue-800 transition-colors text-sm font-medium whitespace-nowrap">
                 + Tambah Aktivitas
               </button>
@@ -120,10 +126,13 @@
         <div class="p-6 space-y-4">
           <div>
             <label class="block text-sm font-medium text-gray-700 mb-1">Kategori</label>
-            <select v-model="activityForm.category_id" class="w-full bg-white border border-gray-300 text-gray-700 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-1 focus:ring-primary focus:border-primary">
-              <option disabled value="0">Pilih Kategori</option>
-              <option v-for="cat in allCategories" :key="cat.id" :value="cat.id">{{ cat.name }}</option>
-            </select>
+            <div class="relative">
+              <select v-model="activityForm.category_id" class="appearance-none w-full bg-white border border-gray-300 text-gray-700 rounded-lg pl-3 pr-10 py-2 text-sm focus:outline-none focus:ring-1 focus:ring-primary focus:border-primary">
+                <option disabled value="0">Pilih Kategori</option>
+                <option v-for="cat in allCategories" :key="cat.id" :value="cat.id">{{ cat.name }}</option>
+              </select>
+              <svg class="w-4 h-4 text-gray-400 absolute right-3 top-1/2 -translate-y-1/2 pointer-events-none" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"></path></svg>
+            </div>
           </div>
           <div>
             <label class="block text-sm font-medium text-gray-700 mb-1">Nama Aktivitas</label>
@@ -173,7 +182,7 @@
 </template>
 
 <script setup lang="ts">
-import { ref, computed, onMounted } from 'vue';
+import { ref, computed, onMounted, onUnmounted } from 'vue';
 import { useRouter } from 'vue-router';
 import { useAuthStore } from '../../stores/auth';
 import { useToast } from 'vue-toastification';
@@ -282,7 +291,31 @@ const fetchCategories = async () => {
   }
 };
 
-const selectedCategoryId = ref('');
+const selectedCategoryId = ref<number | ''>('');
+const showCategoryDropdown = ref(false);
+const categoryDropdownRef = ref<HTMLElement | null>(null);
+
+const toggleCategoryDropdown = () => {
+  showCategoryDropdown.value = !showCategoryDropdown.value;
+};
+
+const selectCategory = (id: number | '') => {
+  selectedCategoryId.value = id;
+  showCategoryDropdown.value = false;
+  fetchActivities();
+};
+
+const selectedCategoryName = computed(() => {
+  if (!selectedCategoryId.value) return 'Semua Kategori';
+  const cat = allCategories.value.find(c => c.id === selectedCategoryId.value);
+  return cat ? cat.name : 'Semua Kategori';
+});
+
+const handleClickOutside = (e: MouseEvent) => {
+  if (categoryDropdownRef.value && !categoryDropdownRef.value.contains(e.target as Node)) {
+    showCategoryDropdown.value = false;
+  }
+};
 
 const fetchActivities = async () => {
   try {
@@ -397,5 +430,10 @@ const saveActivity = async () => {
 
 onMounted(() => {
   fetchData();
+  document.addEventListener('click', handleClickOutside);
+});
+
+onUnmounted(() => {
+  document.removeEventListener('click', handleClickOutside);
 });
 </script>

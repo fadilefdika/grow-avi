@@ -193,7 +193,7 @@
                 <span class="text-[10px]">❌</span>
                 <p class="text-[10px] font-black text-red-500 uppercase tracking-wide">Alasan Penolakan</p>
               </div>
-              <p class="text-xs font-semibold text-red-800 leading-tight">{{ sub.admin_notes.Valid ? sub.admin_notes.String : sub.admin_notes }}</p>
+              <p class="text-xs font-semibold text-red-800 leading-tight break-all">{{ sub.admin_notes.Valid ? sub.admin_notes.String : sub.admin_notes }}</p>
               <div class="mt-1 flex items-center gap-1">
                 <span v-if="sub.status === 'REJECTED_RESUBMIT'" class="px-2 py-0.5 bg-yellow-100 text-yellow-700 border border-yellow-200 text-[9px] font-black rounded-md">📝 BISA DIREVISI</span>
                 <span v-else class="px-2 py-0.5 bg-red-100 text-red-700 border border-red-200 text-[9px] font-black rounded-md">⛔ TIDAK BISA DIREVISI</span>
@@ -252,7 +252,7 @@
               </div>
               <div class="bg-gray-50 p-3.5 rounded-2xl border border-gray-100">
                 <p class="text-[10px] text-gray-500 font-semibold mb-1">Waktu Submit</p>
-                <p class="text-[11px] font-bold text-gray-800 leading-tight">{{ formatDate(selectedDetail.created_at) }}</p>
+                <p class="text-[11px] font-bold text-gray-800 leading-tight">{{ formatDate(selectedDetail.created_at) }} WIB</p>
               </div>
             </div>
 
@@ -272,7 +272,7 @@
                 <span v-if="selectedDetail.status === 'REJECTED_RESUBMIT'" class="px-2 py-1 bg-yellow-100 text-yellow-700 border border-yellow-200 text-[10px] font-black rounded-md">📝 BISA DIREVISI</span>
                 <span v-else class="px-2 py-1 bg-red-100 text-red-700 border border-red-200 text-[10px] font-black rounded-md">⛔ FINAL (TIDAK BISA DIREVISI)</span>
               </div>
-              <p class="text-sm text-red-800 font-semibold">{{ selectedDetail.admin_notes.String }}</p>
+              <p class="text-sm text-red-800 font-semibold break-all">{{ selectedDetail.admin_notes.String }}</p>
             </div>
 
             <!-- Evidence Section -->
@@ -302,6 +302,8 @@
         </div>
       </div>
     </div>
+
+
 
   </div>
 </template>
