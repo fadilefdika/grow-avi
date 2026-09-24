@@ -101,7 +101,7 @@ func (h *RewardHandler) GetRewards(c *gin.Context) {
 
 func (h *RewardHandler) generateKembalianID() (string, error) {
 	dateStr := time.Now().Format("01")
-	prefix := "RET" + dateStr
+	prefix := "KP" + dateStr
 	var seq int
 	err := h.db.QueryRow(
 		"SELECT COUNT(*) FROM activity_submissions WHERE grow_id LIKE @p1",
@@ -610,7 +610,7 @@ func (h *RewardHandler) PendingRedemptions(c *gin.Context) {
 		params.Order = "DESC"
 	}
 
-	query := `SELECT rr.id, rr.npk, u.name as user_name, u.department, r.title as reward_title, rr.points_spent, rr.status, rr.created_at
+	query := `SELECT rr.id, rr.npk, u.fullname as user_name, u.department, r.title as reward_title, rr.points_spent, rr.status, rr.created_at
 		FROM reward_redemptions rr
 		JOIN rewards r ON rr.reward_id = r.id
 		JOIN users u ON rr.npk = u.npk
@@ -624,7 +624,7 @@ func (h *RewardHandler) PendingRedemptions(c *gin.Context) {
 
 	if params.Search != "" {
 		searchTerm := "%" + params.Search + "%"
-		searchCondition := " AND (r.title LIKE @p1 OR u.name LIKE @p1 OR rr.npk LIKE @p1)"
+		searchCondition := " AND (r.title LIKE @p1 OR u.fullname LIKE @p1 OR rr.npk LIKE @p1)"
 		query += searchCondition
 		countQuery += searchCondition
 		args = append(args, searchTerm)

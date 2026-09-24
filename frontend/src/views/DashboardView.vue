@@ -81,9 +81,9 @@
           </div>
           <!-- Rank -->
           <div class="p-5 text-right cursor-pointer group" @click="$router.push('/leaderboard')">
-            <p class="text-gray-500 text-xs font-bold uppercase tracking-wider mb-2">
+            <p class="text-gray-500 text-[9px] font-bold uppercase tracking-wider mb-2">
               Peringkat
-              <span class="ml-1 text-[9px] font-bold bg-primary/10 text-primary px-1.5 py-0.5 rounded-full">Lihat</span>
+              <span class="ml-1 text-sm font-bold bg-primary/10 text-primary px-1.5 py-0.5 rounded-full">Lihat</span>
             </p>
             <div class="flex items-center justify-end gap-2">
               <span v-if="balance > 0" class="text-3xl font-black text-gray-900 group-hover:text-primary transition-colors">#{{ rank }}</span>
@@ -192,39 +192,26 @@
             v-for="sub in displayedSubmissions"
             :key="sub.id"
             @click="openDetail(sub)"
-            class="p-3.5 rounded-2xl border border-gray-100 bg-gray-50/60 cursor-pointer hover:bg-blue-50/60 hover:border-primary/20 transition-all duration-200 group flex flex-col gap-3"
+            class="relative p-3 pl-4 rounded-xl border border-gray-100 bg-white cursor-pointer hover:bg-gray-50 hover:border-primary/20 transition-all duration-200 flex flex-col gap-1 overflow-hidden"
           >
-            <div class="flex items-center justify-between">
-              <div class="flex items-center gap-3 overflow-hidden">
-                <div :class="getStatusIconBg(sub.status)" class="w-7 h-7 rounded-lg flex items-center justify-center shrink-0 shadow-sm">
-                  <svg v-if="sub.status === 'PENDING'" xmlns="http://www.w3.org/2000/svg" class="h-3.5 w-3.5 text-amber-600" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" /></svg>
-                  <svg v-else-if="sub.status === 'APPROVED'" xmlns="http://www.w3.org/2000/svg" class="h-3.5 w-3.5 text-green-600" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M5 13l4 4L19 7" /></svg>
-                  <svg v-else xmlns="http://www.w3.org/2000/svg" class="h-3.5 w-3.5 text-red-500" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M6 18L18 6M6 6l12 12" /></svg>
-                </div>
-                <div class="overflow-hidden">
-                  <p class="text-[11px] font-bold text-gray-400 truncate">{{ sub.grow_id || 'Pengajuan Baru' }}</p>
-                  <p class="text-xs font-black text-gray-800 truncate group-hover:text-primary transition-colors mt-0.5">{{ sub.category_name || 'Memuat...' }}</p>
-                </div>
+            <!-- Accent Line -->
+            <div class="absolute left-0 top-0 bottom-0 w-1" :class="{'bg-amber-500': sub.status === 'PENDING', 'bg-green-500': sub.status === 'APPROVED', 'bg-red-500': sub.status === 'REJECTED', 'bg-yellow-500': sub.status === 'REJECTED_RESUBMIT'}"></div>
+
+            <div class="flex items-start justify-between gap-2">
+              <div class="overflow-hidden">
+                <p class="text-sm font-black text-gray-800 truncate mb-0.5">{{ sub.category_name || 'Memuat...' }}</p>
+                <p class="text-[10px] font-bold text-gray-500 truncate">{{ sub.grow_id || 'Pengajuan Baru' }} &middot; Dikirim {{ formatDate(sub.created_at) }}</p>
               </div>
-              <div class="flex flex-col items-end shrink-0 pl-2">
-                <span :class="getStatusBadgeClass(sub.status)" class="mb-1 text-[10px] px-2 py-0.5 rounded-lg font-black whitespace-nowrap">
+              <div class="shrink-0">
+                <span :class="getStatusBadgeClass(sub.status)" class="text-[9px] px-2 py-0.5 rounded font-black whitespace-nowrap">
                   {{ formatStatus(sub.status) }}
                 </span>
-                <p class="text-[10px] font-bold text-gray-400">Disubmit: {{ formatDate(sub.created_at) }}</p>
               </div>
             </div>
             
             <!-- Alasan Reject -->
-            <div v-if="(sub.status === 'REJECTED' || sub.status === 'REJECTED_RESUBMIT') && sub.admin_notes && (sub.admin_notes.Valid ? sub.admin_notes.String : sub.admin_notes)" class="bg-red-50 border border-red-100 rounded-xl p-3 flex flex-col gap-1.5 items-start animate-fade-in mt-1">
-              <div class="flex items-center gap-1.5">
-                <span class="text-[10px]">❌</span>
-                <p class="text-[10px] font-black text-red-500 uppercase tracking-wide">Alasan Penolakan</p>
-              </div>
-              <p class="text-xs font-semibold text-red-800 leading-tight break-all">{{ sub.admin_notes.Valid ? sub.admin_notes.String : sub.admin_notes }}</p>
-              <div class="mt-1 flex items-center gap-1">
-                <span v-if="sub.status === 'REJECTED_RESUBMIT'" class="px-2 py-0.5 bg-yellow-100 text-yellow-700 border border-yellow-200 text-[9px] font-black rounded-md">📝 BISA DIREVISI</span>
-                <span v-else class="px-2 py-0.5 bg-red-100 text-red-700 border border-red-200 text-[9px] font-black rounded-md">⛔ TIDAK BISA DIREVISI</span>
-              </div>
+            <div v-if="(sub.status === 'REJECTED' || sub.status === 'REJECTED_RESUBMIT') && sub.admin_notes && (sub.admin_notes.Valid ? sub.admin_notes.String : sub.admin_notes)" class="mt-1 animate-fade-in">
+              <p class="text-[11px] font-semibold text-gray-600 truncate"><span class="font-bold text-red-500">✕ Alasan:</span> {{ sub.admin_notes.Valid ? sub.admin_notes.String : sub.admin_notes }}</p>
             </div>
           </div>
         </div>
@@ -263,7 +250,7 @@
             <div class="grid grid-cols-2 gap-3">
               <div class="bg-gray-50 p-3.5 rounded-2xl border border-gray-100" v-if="selectedDetail.category_name !== 'INNOVATION'">
                 <p class="text-[10px] text-gray-500 font-semibold mb-1">Aktivitas</p>
-                <p class="text-[11px] font-bold text-gray-800 leading-tight break-words">{{ (selectedDetail.activity_name === 'Yang lain (Custom)' && selectedDetail.custom_activity_type?.Valid) ? selectedDetail.custom_activity_type.String : (selectedDetail.activity_name || '-') }}</p>
+                <p class="text-[11px] font-bold text-gray-800 leading-tight break-words">{{ (selectedDetail.activity_name === 'Yang lain' && selectedDetail.custom_activity_type?.Valid) ? selectedDetail.custom_activity_type.String : (selectedDetail.activity_name || '-') }}</p>
               </div>
               <div class="bg-gray-50 p-3.5 rounded-2xl border border-gray-100">
                 <p class="text-[10px] text-gray-500 font-semibold mb-1">Kategori</p>
@@ -370,7 +357,9 @@ const xpPercent = computed(() => {
 });
 
 const displayedSubmissions = computed(() => {
-  return allSubmissions.value.slice(0, 5);
+  const rejectedResubmit = allSubmissions.value.filter(sub => sub.status === 'REJECTED_RESUBMIT');
+  const others = allSubmissions.value.filter(sub => sub.status !== 'REJECTED_RESUBMIT');
+  return [...rejectedResubmit, ...others].slice(0, 5);
 });
 
 const showDetailModal = ref(false);
@@ -433,14 +422,15 @@ const getStatusIconBg = (status: string) => {
 const getStatusBadgeClass = (status: string) => {
   switch (status) {
     case 'APPROVED': return 'badge-approved';
-    case 'REJECTED': 
-    case 'REJECTED_RESUBMIT': return 'badge-rejected';
+    case 'REJECTED': return 'badge-rejected';
+    case 'REJECTED_RESUBMIT': return 'bg-amber-100 text-amber-700 border border-amber-200';
     default: return 'badge-pending';
   }
 };
 
 const formatStatus = (status: string) => {
-  if (status === 'REJECTED_RESUBMIT') return 'REJECTED (REVISI)';
+  if (status === 'REJECTED_RESUBMIT') return 'REJECTED · REVISI';
+  if (status === 'REJECTED') return 'REJECTED · FINAL';
   return status;
 };
 

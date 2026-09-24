@@ -133,13 +133,13 @@
                   <div class="bg-gray-50 p-4 rounded-xl border border-gray-100 space-y-3">
                     <div>
                       <p class="text-xs text-gray-500">Kategori & Aktivitas</p>
-                      <p class="font-medium text-gray-900">
-                        {{ selectedDetail.category_name }}<span v-if="selectedDetail.category_name !== 'INNOVATION'"> / {{ selectedDetail.activity_name === 'Yang lain (Custom)' && selectedDetail.custom_activity_type?.Valid ? selectedDetail.custom_activity_type.String : selectedDetail.activity_name }}</span>
+                      <p class="font-medium text-xs text-gray-900">
+                        {{ selectedDetail.category_name }}<span v-if="selectedDetail.category_name !== 'INNOVATION'"> / {{ selectedDetail.activity_name === 'yang lain' && selectedDetail.custom_activity_type?.Valid ? selectedDetail.custom_activity_type.String : selectedDetail.activity_name }}</span>
                       </p>
                     </div>
                     <div>
                       <p class="text-xs text-gray-500">Tanggal Pelaksanaan</p>
-                      <p class="font-medium text-gray-900">{{ formatDate(selectedDetail.activity_date) }} WIB</p>
+                      <p class="font-medium text-xs text-gray-900">{{ formatDate(selectedDetail.activity_date) }} WIB</p>
                     </div>
                     <div v-if="selectedDetail.custom_reference?.Valid">
                       <p class="text-xs text-gray-500">Nama Kegiatan/Aktivitas</p>
@@ -159,8 +159,8 @@
                 <div>
                   <h4 class="text-xs font-bold text-gray-400 uppercase tracking-wider mb-2">Penilaian Poin</h4>
                   <div class="bg-gray-50 p-4 rounded-xl border border-gray-100">
-                    <p class="text-sm text-gray-600">Poin diberikan: <span class="font-bold text-primary text-lg">{{ selectedDetail.points_awarded || 0 }} pts</span></p>
-                    <p class="text-xs text-gray-500 mt-1">Poin default aktivitas: {{ selectedDetail.default_points }} pts</p>
+                    <p class="text-sm text-gray-600">Poin diberikan: <span class="font-bold text-primary text-lg">{{ selectedDetail.points_awarded || 0 }}</span></p>
+                    <!-- <p class="text-xs text-gray-500 mt-1">Poin default aktivitas: {{ selectedDetail.default_points }} pts</p> -->
                   </div>
                 </div>
               </template>

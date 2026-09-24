@@ -31,7 +31,7 @@
               v-model="searchQuery"
               type="text"
               placeholder="Masukkan GROW ID..."
-              class="w-full pl-9 pr-3 py-2 bg-gray-50 border border-gray-200 rounded-lg text-sm focus:outline-none focus:border-primary focus:ring-1 focus:ring-primary transition-all"
+              class="w-full pl-9 pr-3 py-1.5 text-sm bg-gray-50 border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary focus:bg-white transition-all"
               @input="onSearch"
             />
             <svg class="h-4 w-4 text-gray-400 absolute left-3 top-2.5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" /></svg>
@@ -42,8 +42,8 @@
           <label class="block text-[11px] font-semibold text-gray-500 uppercase tracking-wider mb-1.5">Kategori</label>
           <select
             v-model="selectedCategory"
-            @change="fetchHistory(1)"
-            class="w-full px-3 py-2 bg-gray-50 border border-gray-200 rounded-lg text-sm focus:outline-none focus:border-primary focus:ring-1 focus:ring-primary transition-all appearance-none"
+            @change="onFilterChange"
+            class="w-full px-3 py-1.5 text-sm bg-gray-50 border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary focus:bg-white transition-all appearance-none"
           >
             <option value="">Semua Kategori</option>
             <option v-for="cat in categories" :key="cat.id" :value="cat.id">{{ cat.name }}</option>
@@ -51,8 +51,18 @@
           <svg class="w-4 h-4 text-gray-400 absolute right-3 top-[28px] pointer-events-none" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"></path></svg>
         </div>
         
+        <div>
+          <label class="block text-[11px] font-semibold text-gray-500 uppercase tracking-wider mb-1.5">Dari Tanggal</label>
+          <input type="date" v-model="filterDateFrom" class="w-full px-3 py-1.5 text-sm bg-gray-50 border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary focus:bg-white transition-colors" @change="onFilterChange" />
+        </div>
+        
+        <div>
+          <label class="block text-[11px] font-semibold text-gray-500 uppercase tracking-wider mb-1.5">Sampai Tanggal</label>
+          <input type="date" v-model="filterDateTo" class="w-full px-3 py-1.5 text-sm bg-gray-50 border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary focus:bg-white transition-colors" @change="onFilterChange" />
+        </div>
+
         <div class="flex gap-2">
-          <button @click="resetFilter" class="px-4 py-2 text-sm text-gray-600 hover:text-gray-900 bg-gray-100 hover:bg-gray-200 rounded-lg transition-colors font-medium">Reset</button>
+          <button @click="resetFilter" class="px-4 py-1.5 text-sm text-gray-600 hover:text-gray-900 bg-gray-100 hover:bg-gray-200 rounded-lg transition-colors font-medium">Reset</button>
         </div>
       </div>
 
@@ -150,7 +160,7 @@
               <div class="bg-white border-2 border-gray-100 rounded-2xl overflow-hidden divide-y divide-gray-100">
                 <div class="p-3.5 flex justify-between gap-4">
                   <span class="text-sm font-semibold text-gray-500">Nama Aktivitas</span>
-                  <span class="text-sm font-bold text-gray-900 text-right">{{ selectedDetail.activity_name === 'Yang lain (Custom)' && selectedDetail.custom_activity_type?.Valid ? selectedDetail.custom_activity_type.String : selectedDetail.activity_name }}</span>
+                  <span class="text-sm font-bold text-gray-900 text-right">{{ selectedDetail.activity_name === 'yang lain' && selectedDetail.custom_activity_type?.Valid ? selectedDetail.custom_activity_type.String : selectedDetail.activity_name }}</span>
                 </div>
                 <div v-if="selectedDetail.custom_reference?.Valid" class="p-3.5 flex justify-between gap-4">
                   <span class="text-sm font-semibold text-gray-500">Kegiatan Spesifik</span>
@@ -213,6 +223,8 @@ const totalPages = ref(1);
 const totalItems = ref(0);
 const searchQuery = ref('');
 const selectedCategory = ref('');
+const filterDateFrom = ref('');
+const filterDateTo = ref('');
 
 const showDetailModal = ref(false);
 const selectedDetail = ref<any>(null);
@@ -239,9 +251,16 @@ const onTableChange = (params: any) => {
   fetchHistory(params.page);
 };
 
+const onFilterChange = () => {
+  tableParams.page = 1;
+  fetchHistory(1);
+};
+
 const resetFilter = () => {
   searchQuery.value = '';
   selectedCategory.value = '';
+  filterDateFrom.value = '';
+  filterDateTo.value = '';
   tableParams.page = 1;
   fetchHistory(1);
 };
@@ -263,6 +282,8 @@ const fetchHistory = async (page: number) => {
     let url = `/submissions/me?page=${page}&limit=${tableParams.limit}`;
     if (searchQuery.value) url += `&search=${encodeURIComponent(searchQuery.value)}`;
     if (selectedCategory.value) url += `&category_id=${selectedCategory.value}`;
+    if (filterDateFrom.value) url += `&date_from=${filterDateFrom.value}`;
+    if (filterDateTo.value) url += `&date_to=${filterDateTo.value}`;
     
     const res = await apiClient.get(url);
     submissions.value = res.data.submissions;

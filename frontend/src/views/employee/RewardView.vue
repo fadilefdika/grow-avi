@@ -67,18 +67,15 @@
           :key="reward.id"
           :class="[
             'flex items-center gap-3 bg-white rounded-2xl p-3 transition-shadow',
-            reward.stock <= 0
-              ? 'border border-gray-100 opacity-60'
-              : isEligible(reward)
-                ? 'card-eligible shadow-md'
-                : 'border border-gray-100 shadow-sm'
+            isEligible(reward)
+              ? 'card-eligible shadow-md'
+              : 'border border-gray-100 shadow-sm'
           ]"
         >
           <!-- Icon -->
           <div
             :class="[
-              'shrink-0 w-10 h-10 rounded-xl bg-gradient-to-br from-orange-100 to-orange-50 border border-orange-100 flex items-center justify-center',
-              reward.stock <= 0 ? 'grayscale' : ''
+              'shrink-0 w-10 h-10 rounded-xl bg-gradient-to-br from-orange-100 to-orange-50 border border-orange-100 flex items-center justify-center'
             ]"
             aria-hidden="true"
           >
@@ -92,16 +89,10 @@
             <div class="flex items-center gap-1.5 mt-0.5">
               <span class="text-base font-black text-primary leading-none">{{ fmt(reward.points_required) }}</span>
               <span class="text-[11px] font-bold text-gray-500">pts</span>
-              <span
-                v-if="reward.stock > 0 && reward.stock <= 5"
-                class="text-[10px] font-bold text-orange-600 bg-orange-50 rounded-md px-1.5 py-0.5"
-              >
-                Sisa {{ reward.stock }}
-              </span>
             </div>
 
             <!-- Progress toward reward -->
-            <div v-if="reward.stock > 0 && !isEligible(reward)" class="mt-1.5 flex items-center gap-2">
+            <div v-if="!isEligible(reward)" class="mt-1.5 flex items-center gap-2">
               <div
                 class="flex-1 h-1 bg-gray-100 rounded-full overflow-hidden"
                 role="progressbar"
@@ -119,14 +110,7 @@
           </div>
 
           <!-- Action -->
-          <span
-            v-if="reward.stock <= 0"
-            class="shrink-0 px-3 py-2 rounded-xl bg-gray-100 text-gray-500 font-black text-xs"
-          >
-            Habis
-          </span>
           <button
-            v-else
             @click="confirmRedeem(reward, $event)"
             :disabled="!isEligible(reward) || isRedeeming"
             :aria-label="`Tukar ${reward.title}`"

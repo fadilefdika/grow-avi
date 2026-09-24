@@ -129,7 +129,11 @@ func (h *LeaderboardHandler) GetLeaderboard(c *gin.Context) {
 		}
 	}
 	for i := range entries {
-		entries[i].Rank = i + 1
+		if i > 0 && entries[i].Balance == entries[i-1].Balance {
+			entries[i].Rank = entries[i-1].Rank
+		} else {
+			entries[i].Rank = i + 1
+		}
 	}
 
 	if entries == nil {

@@ -117,7 +117,13 @@ func (h *SubmissionHandler) Create(c *gin.Context) {
 
 	var req CreateSubmissionRequest
 	if err := c.ShouldBind(&req); err != nil {
-		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
+		errorMsg := "Mohon lengkapi semua data wajib pada form pengajuan."
+		if strings.Contains(err.Error(), "ActivityID") {
+			errorMsg = "Anda belum memilih Jenis Aktivitas (Aktivitas wajib diisi)."
+		} else if strings.Contains(err.Error(), "ActivityDate") {
+			errorMsg = "Tanggal aktivitas tidak boleh kosong."
+		}
+		c.JSON(http.StatusBadRequest, gin.H{"error": errorMsg})
 		return
 	}
 
@@ -280,6 +286,19 @@ func (h *SubmissionHandler) MySubmissions(c *gin.Context) {
 			args = append(args, catID)
 			paramIndex++
 		}
+	}
+
+	dateFrom := c.Query("date_from")
+	dateTo := c.Query("date_to")
+	if dateFrom != "" {
+		whereClause += fmt.Sprintf(" AND CAST(s.created_at AS DATE) >= @p%d", paramIndex)
+		args = append(args, dateFrom)
+		paramIndex++
+	}
+	if dateTo != "" {
+		whereClause += fmt.Sprintf(" AND CAST(s.created_at AS DATE) <= @p%d", paramIndex)
+		args = append(args, dateTo)
+		paramIndex++
 	}
 
 	// Count total
@@ -659,7 +678,13 @@ func (h *SubmissionHandler) Resubmit(c *gin.Context) {
 
 	var req CreateSubmissionRequest
 	if err := c.ShouldBind(&req); err != nil {
-		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
+		errorMsg := "Mohon lengkapi semua data wajib pada form pengajuan."
+		if strings.Contains(err.Error(), "ActivityID") {
+			errorMsg = "Anda belum memilih Jenis Aktivitas (Aktivitas wajib diisi)."
+		} else if strings.Contains(err.Error(), "ActivityDate") {
+			errorMsg = "Tanggal aktivitas tidak boleh kosong."
+		}
+		c.JSON(http.StatusBadRequest, gin.H{"error": errorMsg})
 		return
 	}
 

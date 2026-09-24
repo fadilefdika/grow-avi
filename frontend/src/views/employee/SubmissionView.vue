@@ -162,9 +162,9 @@
             <label class="block text-lg font-black text-gray-900 flex items-center gap-2">
               <span class="text-xl">🏃‍♂️</span> Kegiatan atau Aktivitas <span class="text-red-500 text-2xl leading-none">*</span>
             </label>
-            <div v-if="form.categoryId === 6" class="mt-2 inline-flex items-center gap-1.5 px-3 py-1.5 bg-amber-50 border border-amber-200 rounded-lg text-amber-800 text-xs font-bold">
+            <!-- <div v-if="form.categoryId === 6" class="mt-2 inline-flex items-center gap-1.5 px-3 py-1.5 bg-amber-50 border border-amber-200 rounded-lg text-amber-800 text-xs font-bold">
               <span>⚠️</span> Untuk kegiatan SPORT dll, harus sudah disetujui oleh Perusahaan
-            </div>
+            </div> -->
           </div>
 
           <div class="relative mt-4">

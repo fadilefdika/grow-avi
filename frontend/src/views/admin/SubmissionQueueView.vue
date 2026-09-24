@@ -40,7 +40,7 @@
       <div v-if="activeTab === 'grow'">
         <DataTable
           title="Antrean Pengajuan"
-          subtitle="Pengajuan dengan status MENUNGGU"
+          subtitle="Pengajuan yang perlu di review"
           :columns="submissionColumns"
           :rows="pendingQueue"
           :server-side="true"
@@ -49,7 +49,7 @@
           empty-text="Tidak ada antrean pengajuan PENDING saat ini."
         >
           <template #cell-created_at="{ row }">
-            <div>{{ formatDate(row.created_at) }}</div>
+            <div>{{ formatDate(row.created_at) }} WIB</div>
             <div class="text-xs text-gray-500">{{ row.grow_id }}</div>
           </template>
           <template #cell-user_name="{ row }">
@@ -133,7 +133,7 @@
                   <div>
                     <p class="text-xs text-gray-500">Kategori & Aktivitas</p>
                     <p class="font-medium text-xs text-gray-900">
-                      {{ selectedDetail.category_name }}<span v-if="selectedDetail.category_name !== 'INNOVATION'"> - {{ selectedDetail.activity_name === 'Yang lain (Custom)' && selectedDetail.custom_activity_type?.Valid ? selectedDetail.custom_activity_type.String : selectedDetail.activity_name }}</span>
+                      {{ selectedDetail.category_name }}<span v-if="selectedDetail.category_name !== 'INNOVATION'"> - {{ selectedDetail.activity_name === 'yang lain' && selectedDetail.custom_activity_type?.Valid ? selectedDetail.custom_activity_type.String : selectedDetail.activity_name }}</span>
                     </p>
                   </div>
                   <div>
