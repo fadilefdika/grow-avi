@@ -19,6 +19,7 @@ import (
 	"time"
 
 	"grow-point/internal/utils"
+	"grow-point/internal/notification"
 
 	"github.com/gin-gonic/gin"
 )
@@ -575,13 +576,13 @@ func (h *SubmissionHandler) Approve(c *gin.Context) {
 	c.ShouldBindJSON(&req)
 
 	var defaultPoints int
-	var status string
+	var status, ownerNPK, activityName string
 	err := h.db.QueryRow(
-		`SELECT COALESCE(a.default_points, 0), s.status
+		`SELECT COALESCE(a.default_points, 0), s.status, s.npk, a.name
 		FROM activity_submissions s
 		JOIN activities a ON s.activity_id = a.id
 		WHERE s.id = @p1 AND s.deleted_at IS NULL`, id,
-	).Scan(&defaultPoints, &status)
+	).Scan(&defaultPoints, &status, &ownerNPK, &activityName)
 	if err == sql.ErrNoRows {
 		c.JSON(http.StatusNotFound, gin.H{"error": "pengajuan tidak ditemukan"})
 		return
@@ -607,6 +608,24 @@ func (h *SubmissionHandler) Approve(c *gin.Context) {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": "gagal approve pengajuan"})
 		return
 	}
+
+	// Trigger Push Notification in a goroutine
+	go func() {
+		// Calculate current balance
+		var totalPoints, totalSpent int
+		h.db.QueryRow("SELECT COALESCE(SUM(points_awarded), 0) FROM activity_submissions WHERE npk = @p1 AND status = 'APPROVED' AND deleted_at IS NULL", ownerNPK).Scan(&totalPoints)
+		h.db.QueryRow("SELECT COALESCE(SUM(points_spent), 0) FROM reward_redemptions WHERE npk = @p1 AND deleted_at IS NULL", ownerNPK).Scan(&totalSpent)
+		
+		currentBalance := totalPoints - totalSpent
+		
+		// Hanya kirim notifikasi JIKA poin sudah bisa diklaim (misal >= 100)
+		if currentBalance >= 100 {
+			msgTitle := "GROW AVI: Poin Siap Ditukar! 🎁"
+			msgBody := fmt.Sprintf("Selamat! Poin Anda telah terkumpul %d pts. Anda sudah bisa menukarkannya dengan voucher hadiah!", currentBalance)
+			notification.SendPushNotification(h.db, ownerNPK, msgTitle, msgBody, "/rewards")
+		}
+	}()
+
 	c.JSON(http.StatusOK, gin.H{"message": "pengajuan berhasil di-approve", "points_awarded": pointsToAward})
 }
 

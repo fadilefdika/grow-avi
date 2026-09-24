@@ -1,0 +1,17 @@
+{
+  "name": "GROW AVI",
+  "short_name": "GROW AVI",
+  "description": "Aplikasi GROW Point AVI",
+  "start_url": "/",
+  "display": "standalone",
+  "background_color": "#ffffff",
+  "theme_color": "#0d6efd",
+  "icons": [
+    {
+      "src": "/favicon.svg",
+      "sizes": "192x192 512x512",
+      "type": "image/svg+xml",
+      "purpose": "any maskable"
+    }
+  ]
+}

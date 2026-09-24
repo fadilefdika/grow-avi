@@ -246,9 +246,12 @@
 
             <!-- Evidence Upload -->
             <div>
-              <label class="block text-sm font-bold text-gray-700 mb-2">
+              <label class="block text-sm font-bold text-gray-700 mb-1">
                 Lampiran File Pendukung <span class="text-red-500">*</span>
               </label>
+              <p v-if="isSubmitSS" class="text-xs text-amber-600 font-bold mb-3 flex items-center gap-1.5">
+                <span>⚠️</span> Pastikan screenshot menampilkan nomor SS dan statusnya dengan jelas.
+              </p>
               <div
                 class="mt-1 flex flex-col items-center justify-center px-6 py-8 border-2 border-gray-300 border-dashed rounded-3xl hover:border-primary hover:bg-blue-50 transition-all cursor-pointer bg-gray-50 group"
                 @click="triggerFileInput"

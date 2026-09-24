@@ -16,20 +16,20 @@
     />
 
     <!-- Header + Card (grup atas) -->
-    <div class="relative z-20 flex flex-col items-center w-full px-4 pt-20 md:pt-10 lg:pt-2">
+    <div class="relative z-20 flex flex-col items-center w-full px-4 pt-7 md:pt-10 lg:pt-2">
       <img
         src="/img/Judul-GROW.png"
         alt="GROW Logo"
-        class="h-40 md:h-28 lg:h-44 mb-4 drop-shadow-md"
+        class="h-24 md:h-28 lg:h-44 mb-3 drop-shadow-md"
       />
 
-      <div class="w-full max-w-sm md:max-w-md bg-white rounded-3xl shadow-2xl p-5 md:p-6">
+      <div class="w-full max-w-sm md:max-w-md bg-white rounded-3xl shadow-2xl p-3 md:p-6">
         <!-- Tab Switcher -->
-        <div class="flex p-1 gap-1 bg-gray-100 rounded-full mb-5 border border-gray-200">
+        <div class="flex p-0.5 gap-1 bg-gray-100 rounded-full mb-3 border border-gray-200">
           <button
             @click="loginType = 'employee'"
             :class="[
-              'flex-1 py-2 text-sm font-bold rounded-full transition-all duration-300',
+              'flex-1 py-1.5 text-xs font-bold rounded-full transition-all duration-300',
               loginType === 'employee'
                 ? 'bg-[#1E6FA8] text-white shadow-md'
                 : 'text-gray-500 hover:text-gray-700'
@@ -40,7 +40,7 @@
           <button
             @click="loginType = 'admin'"
             :class="[
-              'flex-1 py-2 text-sm font-bold rounded-full transition-all duration-300 flex items-center justify-center gap-1.5',
+              'flex-1 py-1.5 text-xs font-bold rounded-full transition-all duration-300 flex items-center justify-center gap-1.5',
               loginType === 'admin'
                 ? 'bg-[#1E6FA8] text-white shadow-md'
                 : 'text-[#1E6FA8] hover:bg-blue-50'
@@ -53,13 +53,13 @@
           </button>
         </div>
 
-        <div class="text-center mb-5">
-          <h2 class="text-xl font-black text-[#1E6FA8]">Selamat Datang!</h2>
-          <p class="text-gray-500 text-sm font-medium mt-1">Masuk untuk memulai perjalananmu</p>
+        <div class="text-center mb-3">
+          <h2 class="text-lg font-black text-[#1E6FA8]">Selamat Datang!</h2>
+          <p class="text-gray-500 text-xs font-medium mt-1">Masuk untuk memulai perjalananmu</p>
         </div>
 
         <!-- Form -->
-        <form class="space-y-4" @submit.prevent="handleLogin">
+        <form class="space-y-3" @submit.prevent="handleLogin">
           <!-- NPK Field -->
           <div class="space-y-1.5">
             <label class="block text-sm font-bold text-[#1E6FA8] ml-2">
@@ -75,7 +75,7 @@
                 type="text"
                 required
                 v-model="usernameInput"
-                class="w-full pl-11 pr-4 py-3 border border-[#1E6FA8]/40 rounded-full text-gray-900 font-semibold text-sm placeholder-gray-400 focus:outline-none focus:border-[#1E6FA8] focus:ring-1 focus:ring-[#1E6FA8] transition-all bg-white shadow-sm"
+                class="w-full pl-11 pr-4 py-2 border border-[#1E6FA8]/40 rounded-full text-gray-900 font-semibold text-sm placeholder-gray-400 focus:outline-none focus:border-[#1E6FA8] focus:ring-1 focus:ring-[#1E6FA8] transition-all bg-white shadow-sm"
                 :placeholder="loginType === 'employee' ? 'Masukkan NPK Anda' : 'Masukkan Username'"
               />
             </div>
@@ -96,7 +96,7 @@
                 :type="showPassword ? 'text' : 'password'"
                 required
                 v-model="passwordInput"
-                class="w-full pl-11 pr-12 py-3 border border-[#1E6FA8]/40 rounded-full text-gray-900 font-semibold text-sm placeholder-gray-400 focus:outline-none focus:border-[#1E6FA8] focus:ring-1 focus:ring-[#1E6FA8] transition-all bg-white shadow-sm"
+                class="w-full pl-11 pr-12 py-2 border border-[#1E6FA8]/40 rounded-full text-gray-900 font-semibold text-sm placeholder-gray-400 focus:outline-none focus:border-[#1E6FA8] focus:ring-1 focus:ring-[#1E6FA8] transition-all bg-white shadow-sm"
                 placeholder="Password"
               />
               <button
@@ -120,7 +120,7 @@
           <button
             type="submit"
             :disabled="isLoading"
-            class="w-full py-3.5 mt-2 font-bold text-white rounded-full bg-[#1E6FA8] hover:bg-[#0D47A1] transition-all duration-300 disabled:opacity-70 flex justify-center items-center shadow-lg hover:shadow-xl"
+            class="w-full py-2.5 mt-1 font-bold text-white rounded-full bg-[#1E6FA8] hover:bg-[#0D47A1] transition-all duration-300 disabled:opacity-70 flex justify-center items-center shadow-lg hover:shadow-xl"
           >
             <span v-if="isLoading" class="flex items-center gap-2">
               <svg class="animate-spin h-5 w-5 text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
@@ -137,54 +137,54 @@
 
         <!-- ===================== DEKORASI MOBILE (overlap penuh, solid) ===================== -->
     <div
-      class="flex md:hidden relative z-10 w-full h-56 pointer-events-none overflow-visible"
+      class="md:hidden absolute bottom-20 left-0 w-full h-28 pointer-events-none z-[14] overflow-visible"
     >
       <!-- kiri: list icon -->
       <img
         src="/img/list-login-pojok-kiri.png"
         alt=""
-        class="absolute left-0 -bottom-8 w-32 z-10"
+        class="absolute left-0 bottom-0 w-24 z-10"
       />
 
       <!-- raket + kamera (tengah-kiri) -->
       <img
         src="/img/raket-samping-kamera.png"
         alt=""
-        class="absolute left-16 -bottom-8 w-52 z-20"
+        class="absolute left-12 bottom-0 w-40 z-20"
       />
 
       <!-- helm -->
       <img
         src="/img/helm-login-diatas-raket.png"
         alt=""
-        class="absolute left-9 -bottom-2 w-48 z-30"
+        class="absolute left-7 bottom-2 w-36 z-30"
       />
 
       <!-- kamera + bola -->
       <img
         src="/img/kamera-login-samping-bola.png"
         alt=""
-        class="absolute right-10 -bottom-8 w-56 z-50"
+        class="absolute right-8 bottom-0 w-40 z-50"
       />
 
       <!-- buku, menindih kamera -->
       <img
         src="/img/buku-login-diatas-kamera.png"
         alt=""
-        class="absolute right-24 -bottom-5 w-52 z-30"
+        class="absolute right-20 bottom-1 w-40 z-30"
       />
 
       <!-- bola pojok kanan bawah -->
       <img
         src="/img/bola-login-pojok-kanan-bawah.png"
         alt=""
-        class="absolute right-0 -bottom-10 w-28 z-40"
+        class="absolute right-0 bottom-0 w-20 z-40"
       />
     </div>
 
     <!-- Gradient overlay biru → transparan, relatif ke SELURUH LAYAR, mentok bawah -->
     <div
-      class="absolute bottom-0 left-0 w-full h-32 md:h-40 lg:h-48 xl:h-56 bg-gradient-to-t from-[#0D47A1]/85 via-[#1E6FA8]/40 to-transparent z-[15] pointer-events-none"
+      class="absolute bottom-0 left-0 w-full h-52 md:h-40 lg:h-48 xl:h-56 bg-gradient-to-t from-[#0D47A1]/85 via-[#1E6FA8]/40 to-transparent z-[15] pointer-events-none"
     ></div>
 
     <!-- ===================== DEKORASI DESKTOP (dua cluster pojok) ===================== -->
@@ -229,7 +229,7 @@
     </div>
 
     <!-- Footer -->
-    <div class="relative z-20 w-full text-center pb-3">
+    <div class="absolute md:relative bottom-[5.5rem] md:bottom-auto z-20 w-full text-center">
       <p class="text-white/90 text-[10px] md:text-xs font-semibold">
         © 2026 PT ASTRA VISTEON INDONESIA
       </p>

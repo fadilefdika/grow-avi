@@ -14,6 +14,7 @@ import (
 	"grow-point/internal/reward"
 	"grow-point/internal/submission"
 	"grow-point/internal/sync"
+	"grow-point/internal/notification"
 
 	"github.com/gin-gonic/gin"
 	"github.com/joho/godotenv"
@@ -43,6 +44,7 @@ func main() {
 	submissionHandler := submission.NewSubmissionHandler(sqlDB, uploadPath)
 	rewardHandler := reward.NewRewardHandler(sqlDB)
 	leaderboardHandler := leaderboard.NewLeaderboardHandler(sqlDB)
+	notificationHandler := notification.NewHandler(sqlDB)
 
 	// Init Gin
 	r := gin.Default()
@@ -99,6 +101,9 @@ func main() {
 		api.GET("/available-points", rewardHandler.GetAvailablePoints)
 		api.POST("/rewards/redeem/:id", rewardHandler.Redeem)
 		api.GET("/rewards/history", rewardHandler.MyRedemptions)
+		
+		// Notifications
+		api.POST("/notifications/subscribe", notificationHandler.Subscribe)
 
 		// ────────────────────────────────
 		// Admin-only routes

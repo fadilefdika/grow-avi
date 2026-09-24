@@ -136,8 +136,26 @@
         </router-link>
       </div>
 
+      <!-- Notification Banner -->
+      <div v-if="notificationPermission !== 'granted'" class="rounded-2xl p-4 flex items-center justify-between mb-6 border border-blue-200" style="background: linear-gradient(135deg, #eff6ff, #dbeafe);">
+        <div class="flex items-center gap-3">
+          <div class="w-10 h-10 bg-blue-500/20 rounded-xl flex items-center justify-center shrink-0">
+            <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 text-blue-600" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 17h5l-1.405-1.405A2.032 2.032 0 0118 14.158V11a6.002 6.002 0 00-4-5.659V5a2 2 0 10-4 0v.341C7.67 6.165 6 8.388 6 11v3.159c0 .538-.214 1.055-.595 1.436L4 17h5m6 0v1a3 3 0 11-6 0v-1m6 0H9" />
+            </svg>
+          </div>
+          <div>
+            <h3 class="text-blue-900 font-bold text-sm">Aktifkan Notifikasi</h3>
+            <p class="text-blue-700/80 text-xs font-medium">Terima info persetujuan & poin otomatis</p>
+          </div>
+        </div>
+        <button @click="enableNotifications" class="px-3 py-1.5 bg-blue-600 text-white font-bold rounded-lg text-xs hover:bg-blue-700 transition-colors shadow-sm shrink-0 ml-2">
+          Aktifkan
+        </button>
+      </div>
+
       <!-- Admin Mode Banner -->
-      <div v-if="auth.user?.role === 'admin'" class="rounded-2xl p-4 flex items-center justify-between" style="background: linear-gradient(135deg, #1e293b, #334155);">
+      <div v-if="auth.user?.role === 'admin'" class="rounded-2xl p-4 flex items-center justify-between mb-6" style="background: linear-gradient(135deg, #1e293b, #334155);">
         <div class="flex items-center gap-3">
           <div class="w-10 h-10 bg-yellow-500/20 rounded-xl flex items-center justify-center">
             <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 text-yellow-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
@@ -327,6 +345,7 @@ import { ref, onMounted, computed } from 'vue';
 import { useRouter } from 'vue-router';
 import { useAuthStore } from '../stores/auth';
 import apiClient from '../api/client';
+import { subscribeToPushNotifications } from '../utils/push';
 
 const authStore = useAuthStore();
 const router = useRouter();
@@ -336,6 +355,12 @@ const balance = ref(0);
 const rank = ref('-');
 const allSubmissions = ref<any[]>([]);
 const isLoading = ref(true);
+const notificationPermission = ref('default');
+
+const enableNotifications = async () => {
+  await subscribeToPushNotifications();
+  notificationPermission.value = Notification.permission;
+};
 
 // Animated balance counter
 const displayBalance = ref(0);
@@ -487,7 +512,13 @@ const handleLogout = async () => {
   }
 };
 
-onMounted(() => {
+onMounted(async () => {
+  if ('Notification' in window) {
+    notificationPermission.value = Notification.permission;
+    if (Notification.permission === 'granted') {
+      await subscribeToPushNotifications();
+    }
+  }
   fetchDashboardData();
 });
 </script>
